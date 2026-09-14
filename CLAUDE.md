@@ -7,13 +7,23 @@
 ---
 
 ## Project Overview
-**App:** A simple poll web application where users can create polls, share them, and vote on them. Each poll has a graphical results analysis.
+**App name:** Polls
 
-**Stage:** TBD
+**Purpose:** A simple poll web application. Registered users create polls and share them with guests through an invite link. Anyone with the link can answer the poll question and view the results. Each poll has a graphical results analysis.
 
-**Users:**
-- **Assigned users:** can create a new poll and share it
-- **Guests:** can only view and vote on polls they received an invitation to from an assigned user
+**Stage:** Planning / pre-development (MVP). The use cases are defined in `specs/initial-spec.md`. No application code exists yet.
+
+**Source of truth for use cases:** `specs/initial-spec.md`
+
+**Target Users:**
+- **Guest:** reaches a poll through an invite URL. No account and no login: the guest enters a nickname before answering. Has no poll-creation rights.
+  - Accepts an invite to a poll (given a URL)
+  - Enters a nickname
+  - Views the poll question and picks an answer
+  - Views the poll's final results
+- **User:** registered with a simple username and password. Logging in returns a JWT. No email verification, password reset, OAuth or 2FA. Has all Guest use cases, plus:
+  - Creates a poll
+  - Sends the poll link to guests so they can take part
 
 ---
 
@@ -61,6 +71,7 @@
 ├── e2e/                     # Playwright end-to-end tests (owned by /qa)
 ├── CLAUDE.md                # ← You are here
 ├── specs/
+│   ├── initial-spec.md      # Target users and use cases (product source of truth)
 │   └── design/
 │       ├── direction-brief.md   # Visual direction, approved palette, constraints
 │       ├── components.md        # Component catalog — anatomy, variants, states, tokens used
