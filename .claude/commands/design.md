@@ -24,6 +24,19 @@ Always follow `CLAUDE.md`. The captain (the user) makes every final decision.
 
 ---
 
+## Current Direction
+
+**Direction:** Option B — Playful. Chosen by the captain on 2026-09-14.
+**Brief:** `specs/design/direction-brief.md` · **Tokens:** `client/src/styles/tokens.css` · **Preview:** `specs/design/previews/direction-playful.html`
+**Rejected:** Option A — Calm (`specs/design/previews/direction-calm.html`)
+
+- **Every feature uses this direction.** Every new component, screen, and UI review follows the brief's palette, typography, shape, motion, and **Pattern Principles**.
+- A feature never introduces its own look: no new palette, font, corner style, shadow style, or button shape. If a spec seems to need one, tell the captain; changing the direction goes through Changing the Design System.
+- The preview is the visual reference for the direction's character. The brief and `tokens.css` are the source of truth when they differ from the preview.
+- Values live in the brief and `tokens.css`, never in this file.
+
+---
+
 ## Workflow
 
 0. **Direction (first run only)** — If `specs/design/direction-brief.md` is missing or empty, build the system before anything else:
@@ -111,6 +124,9 @@ When motion is used, speed, easing.
 ## Iconography
 Icon set and style.
 
+## Pattern Principles
+The direction's recurring patterns (buttons, options, cards, modals, confirmations, badges, empty states, errors) that every new component must follow.
+
 ## Chart Style
 How results charts look within this direction.
 
@@ -148,16 +164,16 @@ Starter set (extend only when a real role needs it):
 
 | Category | Tokens |
 |----------|--------|
-| Color — base | `--color-bg`, `--color-surface`, `--color-surface-raised`, `--color-border`, `--color-border-strong` |
+| Color — base | `--color-bg`, `--color-surface`, `--color-surface-raised`, `--color-border`, `--color-border-strong`, `--color-scrim` |
 | Color — text | `--color-text`, `--color-text-muted`, `--color-text-inverse` |
-| Color — action | `--color-action`, `--color-action-hover`, `--color-action-text`, `--color-focus` |
+| Color — action | `--color-action`, `--color-action-hover`, `--color-action-text`, `--color-action-subtle`, `--color-focus` |
 | Color — feedback | `--color-success`, `--color-success-subtle`, `--color-warning`, `--color-warning-subtle`, `--color-danger`, `--color-danger-subtle` |
 | Chart | `--chart-1` … `--chart-8`, `--chart-track`, `--chart-highlight` |
 | Typography | `--font-sans`, `--text-xs` … `--text-3xl`, `--leading-tight`, `--leading-normal`, `--weight-regular`, `--weight-medium`, `--weight-bold` |
 | Spacing | `--space-1` … `--space-12` (multiples of one base unit) |
 | Radius | `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-full` |
 | Shadow | `--shadow-sm`, `--shadow-md`, `--shadow-lg` |
-| Motion | `--duration-fast`, `--duration-base`, `--ease-standard` |
+| Motion | `--duration-fast`, `--duration-base`, `--ease-standard`, `--ease-emphasized` |
 | Layout | `--container-max`, `--touch-target-min` |
 | Z-index | `--z-dropdown`, `--z-modal`, `--z-toast` |
 

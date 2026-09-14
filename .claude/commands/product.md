@@ -38,10 +38,18 @@ Never set status to `Approved` yourself. Only the captain does.
 
 ## Roles
 
-| Role          | Can do                                                        |
-|---------------|---------------------------------------------------------------|
-| Assigned user | Create polls, share polls                                     |
-| Guest         | View and vote only on polls they were invited to              |
+Roles come from `CLAUDE.md` and `specs/initial-spec.md`. If those change, update this section.
+
+| Role  | Can do |
+|-------|--------|
+| User  | Register and log in. Create polls, share the invite link, see My polls, view results and participant nicknames of their own polls, close their own polls. Takes part in other users' polls as a guest. |
+| Guest | Anyone with an invite link, no account. Enters a nickname, answers an open poll, views its results after answering. Cannot create, close, or manage polls. |
+
+**Product rules**
+- A poll stays open until its creator closes it. A closed poll accepts no more answers.
+- A guest sees a poll's results only after answering it, never before.
+- The poll creator can see the nicknames of the people who answered.
+- A registered user who opens another user's invite link takes part as a guest.
 
 ---
 
@@ -78,10 +86,10 @@ Example: `specs/features/2026-09-14-create-poll.md`
 What user problem does this solve? Why now?
 
 ## Users & Permissions
-| Role          | What they can do in this feature |
-|---------------|----------------------------------|
-| Assigned user |                                  |
-| Guest         |                                  |
+| Role  | What they can do in this feature |
+|-------|----------------------------------|
+| User  |                                  |
+| Guest |                                  |
 
 ## User Stories
 - [Must] As a <role>, I want <action>, so that <benefit>.
@@ -109,8 +117,9 @@ Exact text shown to the user. Dev implements it word for word; QA tests against 
 |          |       |      |
 
 ## Security & Privacy
-- Who can see this data (polls, votes, results, voter identity)?
-- Is voting anonymous to the poll creator?
+- Who can see this data (polls, answers, results, participant nicknames)?
+- What does the poll creator see about participants?
+- Can anyone see results before answering?
 - What does a shared or invite link expose, and to whom?
 - What happens when an unauthorized user tries to access it?
 
@@ -144,17 +153,19 @@ Exact text shown to the user. Dev implements it word for word; QA tests against 
 
 Think through every item for every feature. Document the ones that apply in **Edge Cases**. If one does not apply, skip it silently.
 
-- [ ] User votes twice on the same poll
-- [ ] Poll is closed or expired
-- [ ] Poll was deleted while someone is viewing or voting
-- [ ] Invite link is invalid, expired, or already used
-- [ ] Guest opens a poll without an invite
-- [ ] Guest tries an assigned-user action (create, share)
+- [ ] Same person answers the same poll twice (refresh, second tab, different nickname)
+- [ ] Poll is closed by its creator while someone is viewing or answering
+- [ ] Invite link is invalid or points to a poll that does not exist
+- [ ] Guest tries to see results before answering
+- [ ] Guest tries a user-only action (create poll, My polls)
+- [ ] A non-creator tries a creator action on a poll (close, view nicknames)
+- [ ] Registered user opens another user's invite link (takes part as a guest)
 - [ ] Logged-in session expires mid-action
-- [ ] Poll has zero votes (results view)
+- [ ] Poll has zero answers (results, My polls)
+- [ ] User has no polls yet (My polls)
 - [ ] Poll has many options or very long text
-- [ ] Network or server failure mid-action (vote, create, share)
-- [ ] Two users act on the same poll at the same time
+- [ ] Network or server failure mid-action (answer, create, share, close)
+- [ ] Two people act on the same poll at the same time (e.g. an answer arrives while the creator closes it)
 
 ---
 
