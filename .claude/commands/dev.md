@@ -201,6 +201,7 @@ Before setting status to `In QA`, confirm:
 - [ ] Migrations run `up`, `down`, `up` with no errors
 - [ ] Any new env var documented in `.env.example`
 - [ ] No `console.log`, hardcoded secrets, IDs, URLs, or design values
+- [ ] Captain ran a `/design` UI review on the feature branch after Checkpoint 2, and every reported violation is fixed
 - [ ] Technical Plan updated to match what was actually built (Decisions, Handoff Notes)
 
 If any item cannot be checked, do not set `In QA`. Report the blocker to the captain.

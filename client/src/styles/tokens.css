@@ -1,0 +1,163 @@
+/*
+ * Polls design tokens — Direction: Option B "Playful"
+ * Owned by /design. Decisions and rationale: specs/design/direction-brief.md
+ *
+ * Primitives are used ONLY inside this file.
+ * Components and Tailwind use semantic tokens only.
+ */
+
+:root {
+  /* =========================================================
+   * PRIMITIVES
+   * ========================================================= */
+
+  /* Sand (warm neutrals) */
+  --sand-0: #FFFFFF;
+  --sand-50: #FFF7EE;
+  --sand-100: #FBEBDD;
+  --sand-200: #F6E3D2;
+  --sand-300: #EBD3BE;
+  --sand-500: #9C8676;
+  --sand-700: #6B5647;
+  --sand-900: #2A1E17;
+
+  /* Sand-900 alpha (shadows, scrim) */
+  --sand-900-a10: rgba(42, 30, 23, 0.10);
+  --sand-900-a18: rgba(42, 30, 23, 0.18);
+  --sand-900-a45: rgba(42, 30, 23, 0.45);
+
+  /* Orange */
+  --orange-50: #FFF1E6;
+  --orange-500: #D0612F;
+  --orange-700: #C2410C;
+  --orange-800: #9A3412;
+
+  /* Teal */
+  --teal-700: #0F766E;
+
+  /* Green */
+  --green-50: #ECFDF3;
+  --green-700: #067647;
+
+  /* Amber */
+  --amber-50: #FFFAEB;
+  --amber-700: #B54708;
+
+  /* Red */
+  --red-50: #FEF3F2;
+  --red-700: #B42318;
+
+  /* Categorical (colorblind-safe, each >= 3:1 on white) */
+  --cat-blue: #0072B2;
+  --cat-green: #008A63;
+  --cat-pink: #B8568E;
+  --cat-ochre: #B07A00;
+  --cat-sky: #2F86B8;
+  --cat-purple: #6A3D9A;
+  --cat-gray: #6B6B6B;
+
+  /* Size scale */
+  --size-8: 8px;
+  --size-14: 14px;
+  --size-22: 22px;
+  --size-44: 44px;
+
+  /* =========================================================
+   * SEMANTIC
+   * ========================================================= */
+
+  /* Color — base */
+  --color-bg: var(--sand-50);
+  --color-surface: var(--sand-0);
+  --color-surface-raised: var(--sand-0);
+  --color-border: var(--sand-300);
+  --color-border-strong: var(--sand-500);
+  --color-scrim: var(--sand-900-a45);
+
+  /* Color — text */
+  --color-text: var(--sand-900);
+  --color-text-muted: var(--sand-700);
+  --color-text-inverse: var(--sand-0);
+
+  /* Color — action */
+  --color-action: var(--orange-700);
+  --color-action-hover: var(--orange-800);
+  --color-action-text: var(--sand-0);
+  --color-action-subtle: var(--orange-50);
+  --color-focus: var(--teal-700);
+
+  /* Color — feedback */
+  --color-success: var(--green-700);
+  --color-success-subtle: var(--green-50);
+  --color-warning: var(--amber-700);
+  --color-warning-subtle: var(--amber-50);
+  --color-danger: var(--red-700);
+  --color-danger-subtle: var(--red-50);
+
+  /* Chart */
+  --chart-1: var(--orange-500);
+  --chart-2: var(--cat-blue);
+  --chart-3: var(--cat-green);
+  --chart-4: var(--cat-pink);
+  --chart-5: var(--cat-ochre);
+  --chart-6: var(--cat-sky);
+  --chart-7: var(--cat-purple);
+  --chart-8: var(--cat-gray);
+  --chart-track: var(--sand-200);
+  --chart-highlight: var(--orange-800);
+
+  /* Typography */
+  --font-sans: "Nunito", ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.625rem;
+  --text-3xl: 2.25rem;
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --weight-regular: 400;
+  --weight-medium: 600;
+  --weight-bold: 800;
+
+  /* Spacing (base unit 4px) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 1.75rem;
+  --space-8: 2rem;
+  --space-9: 2.25rem;
+  --space-10: 2.5rem;
+  --space-11: 2.75rem;
+  --space-12: 3rem;
+
+  /* Radius */
+  --radius-sm: var(--size-8);
+  --radius-md: var(--size-14);
+  --radius-lg: var(--size-22);
+  --radius-full: 9999px;
+
+  /* Shadow */
+  --shadow-sm: 0 2px 0 var(--sand-900-a10);
+  --shadow-md: 0 4px 0 var(--sand-900-a10);
+  --shadow-lg: 0 0 32px var(--sand-900-a18);
+
+  /* Motion */
+  --duration-fast: 140ms;
+  --duration-base: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.34, 1.3, 0.64, 1);
+
+  /* Layout */
+  --container-max: 36rem;
+  --touch-target-min: var(--size-44);
+
+  /* Z-index */
+  --z-dropdown: 10;
+  --z-modal: 50;
+  --z-toast: 60;
+}
