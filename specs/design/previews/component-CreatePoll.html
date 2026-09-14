@@ -1,0 +1,698 @@
+<!--
+  Polls — Component preview: Create poll feature
+  Spec: specs/features/2026-09-14-create-poll.md
+  Direction: Option B "Playful" (specs/design/direction-brief.md)
+  Reference only. Dev never copies this markup into client/.
+  Copy comes from the spec's UI Copy table. Copy marked PENDING is waiting on a /product spec change.
+  Tokens mirror client/src/styles/tokens.css. PROPOSED tokens are marked.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polls — Create poll components</title>
+<style>
+:root {
+  /* ===== PRIMITIVES ===== */
+  --sand-0: #FFFFFF; --sand-50: #FFF7EE; --sand-100: #FBEBDD; --sand-200: #F6E3D2;
+  --sand-300: #EBD3BE; --sand-500: #9C8676; --sand-700: #6B5647; --sand-900: #2A1E17;
+  --sand-900-a10: rgba(42, 30, 23, 0.10); --sand-900-a18: rgba(42, 30, 23, 0.18); --sand-900-a45: rgba(42, 30, 23, 0.45);
+  --orange-50: #FFF1E6; --orange-500: #D0612F; --orange-700: #C2410C; --orange-800: #9A3412;
+  --teal-700: #0F766E;
+  --green-50: #ECFDF3; --green-700: #067647;
+  --amber-50: #FFFAEB; --amber-700: #B54708;
+  --red-50: #FEF3F2; --red-700: #B42318;
+  --size-8: 8px; --size-14: 14px; --size-22: 22px; --size-44: 44px;
+
+  /* ===== SEMANTIC ===== */
+  --color-bg: var(--sand-50);
+  --color-surface: var(--sand-0);
+  --color-surface-raised: var(--sand-0);
+  --color-border: var(--sand-300);
+  --color-border-strong: var(--sand-500);
+  --color-scrim: var(--sand-900-a45);
+  --color-text: var(--sand-900);
+  --color-text-muted: var(--sand-700);
+  --color-text-inverse: var(--sand-0);
+  --color-action: var(--orange-700);
+  --color-action-hover: var(--orange-800);
+  --color-action-text: var(--sand-0);
+  --color-action-subtle: var(--orange-50);
+  --color-focus: var(--teal-700);
+  --color-success: var(--green-700);
+  --color-success-subtle: var(--green-50);
+  --color-warning: var(--amber-700);
+  --color-warning-subtle: var(--amber-50);
+  --color-danger: var(--red-700);
+  --color-danger-subtle: var(--red-50);
+  --chart-track: var(--sand-200);
+
+  --font-sans: "Nunito", ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem; --text-lg: 1.125rem;
+  --text-xl: 1.375rem; --text-2xl: 1.625rem; --text-3xl: 2.25rem;
+  --leading-tight: 1.2; --leading-normal: 1.5;
+  --weight-regular: 400; --weight-medium: 600; --weight-bold: 800;
+
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem;
+  --space-6: 1.5rem; --space-7: 1.75rem; --space-8: 2rem; --space-9: 2.25rem; --space-10: 2.5rem;
+  --space-11: 2.75rem; --space-12: 3rem;
+
+  --radius-sm: var(--size-8); --radius-md: var(--size-14); --radius-lg: var(--size-22); --radius-full: 9999px;
+
+  --shadow-sm: 0 2px 0 var(--sand-900-a10);
+  --shadow-md: 0 4px 0 var(--sand-900-a10);
+  --shadow-lg: 0 0 32px var(--sand-900-a18);
+
+  --duration-fast: 140ms; --duration-base: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.34, 1.3, 0.64, 1);
+
+  /* Transform */
+  --rotate-tilt-sm: -2deg;
+  --rotate-tilt-md: -6deg;
+
+  --container-max: 36rem;
+  --touch-target-min: var(--size-44);
+  --z-dropdown: 10; --z-modal: 50; --z-toast: 60;
+
+  /* preview only */
+  --frame-w: 360px;
+}
+
+/* ===== Preview chrome ===== */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font-sans); font-size: var(--text-base); line-height: var(--leading-normal); color: var(--color-text); background: var(--sand-100); }
+.pv { max-width: 1600px; margin-inline: auto; padding: var(--space-6) var(--space-5) var(--space-12); }
+.pv > header h1 { margin: 0; font-size: var(--text-3xl); line-height: var(--leading-tight); }
+.pv > header p { margin: var(--space-2) 0 0; color: var(--color-text-muted); max-width: 52rem; }
+.pv-nav { display: flex; flex-wrap: wrap; gap: var(--space-2); padding-block: var(--space-4) var(--space-6); }
+.pv-nav a { font-size: var(--text-sm); padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text); text-decoration: none; }
+.pv-section { padding-block: var(--space-6) var(--space-10); border-top: 2px dashed var(--color-border-strong); }
+.pv-section > h2 { margin: 0; font-size: var(--text-2xl); }
+.pv-section > p { margin: var(--space-2) 0 var(--space-5); color: var(--color-text-muted); max-width: 52rem; }
+.frames { display: flex; flex-wrap: wrap; gap: var(--space-8); align-items: flex-start; }
+.frame-wrap { margin: 0; width: min(var(--frame-w), 100%); }
+.frame-wrap.desktop { --frame-w: 760px; }
+.frame-wrap figcaption { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-text-muted); margin-bottom: var(--space-2); }
+.frame { container-type: inline-size; background: var(--color-bg); border: 2px solid var(--color-text); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); position: relative; }
+.pending { font-size: var(--text-xs); font-weight: var(--weight-bold); background: var(--color-warning-subtle); color: var(--color-text); border: 1px solid var(--color-warning); border-radius: var(--radius-sm); padding: 0 var(--space-2); }
+.note { font-size: var(--text-sm); background: var(--color-warning-subtle); border: 1px solid var(--color-warning); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); display: inline-block; margin-bottom: var(--space-4); }
+
+/* ===== App primitives ===== */
+.icon { width: 1.25em; height: 1.25em; flex: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.stack { display: grid; gap: var(--space-5); }
+.stack-sm { display: grid; gap: var(--space-2); }
+.muted { color: var(--color-text-muted); }
+.h1 { margin: 0; font-size: var(--text-2xl); line-height: var(--leading-tight); font-weight: var(--weight-bold); overflow-wrap: anywhere; }
+.h2 { margin: 0; font-size: var(--text-xl); line-height: var(--leading-tight); font-weight: var(--weight-bold); overflow-wrap: anywhere; }
+p { margin: 0; }
+
+/* PageLayout */
+.screen { display: flex; flex-direction: column; min-height: 640px; position: relative; }
+.wrap { width: 100%; max-width: var(--container-max); margin-inline: auto; padding: var(--space-4) var(--space-5) var(--space-6); flex: 1; }
+.bottom-bar { position: sticky; bottom: 0; background: var(--color-bg); border-top: 2px solid var(--color-border); padding: var(--space-3) var(--space-5) var(--space-5); }
+.bottom-bar > .bar-inner { max-width: var(--container-max); margin-inline: auto; display: grid; gap: var(--space-2); }
+@container (min-width: 700px) {
+  .screen { min-height: 560px; }
+  .wrap { padding-block: var(--space-8); }
+  .bottom-bar { position: static; border-top: 0; padding-bottom: var(--space-10); }
+  .bottom-bar > .bar-inner { display: flex; justify-content: flex-end; }
+  .bottom-bar .btn-block { width: auto; }
+}
+
+/* NavBar */
+.nav { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-5); }
+.logo { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-bold); font-size: var(--text-xl); color: var(--color-text); text-decoration: none; }
+.logo-mark { display: grid; place-items: center; width: var(--space-9); height: var(--space-9); border-radius: var(--radius-md); background: var(--color-action); color: var(--color-action-text); transform: rotate(var(--rotate-tilt-md)); }
+.nav-user { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.avatar { display: grid; place-items: center; width: var(--space-9); height: var(--space-9); border-radius: var(--radius-full); background: var(--color-text); color: var(--color-text-inverse); font-weight: var(--weight-bold); flex: none; }
+
+/* Button */
+.btn { min-height: var(--space-12); padding: 0 var(--space-6); border-radius: var(--radius-full); font: inherit; font-weight: var(--weight-bold); display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); border: 2px solid transparent; cursor: pointer; text-decoration: none; transition: transform var(--duration-fast) var(--ease-emphasized), background-color var(--duration-fast) var(--ease-standard); }
+.btn:active { transform: translateY(2px); box-shadow: none; }
+.btn:focus-visible, .icon-btn:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+.btn-primary { background: var(--color-action); color: var(--color-action-text); box-shadow: var(--shadow-md); }
+.btn-primary:hover { background: var(--color-action-hover); }
+.btn-secondary { background: var(--color-surface); color: var(--color-text); border-color: var(--color-text); }
+.btn-secondary:hover { background: var(--color-bg); }
+.btn-dashed { border-style: dashed; }
+.btn-ghost { background: transparent; color: var(--color-text); }
+.btn-ghost:hover { background: var(--color-action-subtle); }
+.btn-danger { background: var(--color-danger); color: var(--color-text-inverse); box-shadow: var(--shadow-md); }
+.btn-danger:hover { border-color: var(--color-text); }
+.btn-sm { min-height: var(--touch-target-min); padding-inline: var(--space-4); }
+.btn-block { width: 100%; }
+.btn[aria-disabled="true"] { cursor: not-allowed; background: var(--color-surface); color: var(--color-text-muted); border-color: var(--color-border-strong); box-shadow: none; }
+.btn.is-loading, .btn.is-loading:hover { cursor: progress; background: var(--color-action-hover); color: var(--color-action-text); border-color: transparent; box-shadow: none; }
+.spinner { width: var(--space-5); height: var(--space-5); border-radius: var(--radius-full); border: 3px solid currentColor; border-right-color: transparent; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.icon-btn { display: grid; place-items: center; width: var(--touch-target-min); height: var(--touch-target-min); border-radius: var(--radius-full); border: 0; background: transparent; color: var(--color-text-muted); cursor: pointer; flex: none; font: inherit; }
+.icon-btn:hover { background: var(--color-bg); color: var(--color-text); }
+.icon-btn:disabled { color: var(--color-border-strong); cursor: not-allowed; background: transparent; }
+
+/* TextInput */
+.field { display: grid; gap: var(--space-2); }
+.label-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-height: var(--touch-target-min); }
+.label { font-size: var(--text-sm); font-weight: var(--weight-bold); }
+.help { font-size: var(--text-sm); color: var(--color-text-muted); }
+.input { width: 100%; min-height: var(--space-12); padding: var(--space-3) var(--space-4); border: 2px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; line-height: var(--leading-normal); resize: none; overflow-wrap: anywhere; }
+textarea.input { display: block; field-sizing: content; }
+.input-lg { font-size: var(--text-xl); font-weight: var(--weight-medium); line-height: var(--leading-tight); }
+.input-multi { min-height: calc(var(--space-12) * 2); }
+.input::placeholder { color: var(--color-text-muted); }
+.input:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+.input[aria-invalid="true"] { border-color: var(--color-danger); background: var(--color-danger-subtle); }
+.input[readonly] { cursor: default; }
+.helper-row { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); min-height: var(--space-5); }
+.field-error { display: flex; align-items: flex-start; gap: var(--space-1); font-size: var(--text-sm); color: var(--color-danger); font-weight: var(--weight-bold); }
+.field-error .icon { margin-top: 1px; }
+.counter { margin-left: auto; font-size: var(--text-sm); color: var(--color-text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.counter.at-limit { color: var(--color-text); font-weight: var(--weight-bold); }
+
+/* Card */
+.card { background: var(--color-surface); border: 2px solid var(--color-text); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-md); }
+.card-tint { background: var(--color-action-subtle); }
+
+/* HeroCard */
+.hero { display: grid; gap: var(--space-4); }
+.hero-bars { display: grid; gap: var(--space-2); max-width: 70%; transform: rotate(var(--rotate-tilt-sm)); }
+.hero-bars span { display: block; height: var(--space-4); border-radius: var(--radius-full); background: var(--color-action); }
+.hero-bars span:nth-child(2) { width: 60%; background: var(--color-text); }
+.hero-bars span:nth-child(3) { width: 35%; background: var(--color-border-strong); }
+.hero .h1 { font-size: var(--text-3xl); }
+
+/* AnswerTypeSelector */
+.fs { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: var(--space-3); }
+.fs > legend { padding: 0; margin-bottom: var(--space-3); }
+.achoice { position: relative; display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3); min-height: var(--space-12); border: 2px solid var(--color-text); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); cursor: pointer; font-weight: var(--weight-medium); overflow-wrap: anywhere; transition: transform var(--duration-fast) var(--ease-emphasized), background-color var(--duration-fast) var(--ease-standard); }
+.achoice:hover { transform: translateY(-1px); }
+.achoice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.aind { flex: none; display: grid; place-items: center; width: var(--space-8); height: var(--space-8); border-radius: var(--radius-full); border: 2px solid var(--color-text); background: var(--color-surface); }
+.aind .icon { display: none; }
+.achoice:has(input:checked) { background: var(--color-action); color: var(--color-action-text); border-color: var(--color-action-hover); box-shadow: none; transform: none; }
+.achoice:has(input:checked) .aind { color: var(--color-action); border-color: var(--color-surface); }
+.achoice:has(input:checked) .aind .icon { display: block; }
+.achoice:has(input:focus-visible) { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+.achoice:has(input:disabled) { cursor: default; transform: none; }
+
+/* OptionListEditor + OptionEditorRow */
+.olist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.orow { position: relative; display: grid; gap: var(--space-2); padding: var(--space-1) var(--space-3) var(--space-2); border: 2px solid var(--color-text); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); transition: box-shadow var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-emphasized); }
+.orow-head { display: flex; align-items: center; gap: var(--space-1); margin-inline: calc(-1 * var(--space-2)); }
+.orow-head .spacer { flex: 1; }
+.grip { cursor: grab; touch-action: none; color: var(--color-text); }
+.num { flex: none; display: grid; place-items: center; width: var(--space-8); height: var(--space-8); border-radius: var(--radius-full); border: 2px solid var(--color-text); font-weight: var(--weight-bold); font-size: var(--text-sm); }
+.orow.is-invalid { border-color: var(--color-danger); }
+.orow.is-dragging { box-shadow: var(--shadow-md); transform: rotate(var(--rotate-tilt-sm)); z-index: var(--z-dropdown); }
+.orow.is-dragging .grip { cursor: grabbing; background: var(--color-action-subtle); }
+.drop-slot { border: 2px dashed var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-bg); min-height: calc(var(--space-12) * 2); }
+.limit-hint { display: flex; gap: var(--space-1); align-items: flex-start; font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-text-muted); }
+
+/* Alert */
+.alert { display: flex; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border: 2px solid var(--color-danger); background: var(--color-danger-subtle); font-weight: var(--weight-medium); }
+.alert > .icon { color: var(--color-danger); margin-top: 2px; }
+
+/* StatusBadge */
+.badge { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--text-xs); font-weight: var(--weight-bold); padding: 2px var(--space-3); border-radius: var(--radius-full); border: 2px solid currentColor; text-transform: uppercase; letter-spacing: 0.04em; }
+.badge-open { color: var(--color-success); background: var(--color-success-subtle); }
+.dot { width: var(--space-2); height: var(--space-2); border-radius: var(--radius-full); background: currentColor; }
+
+/* PollSummary */
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted); font-weight: var(--weight-medium); }
+.meta .atype-tag { display: inline-flex; align-items: center; gap: var(--space-1); }
+.summary-q { font-size: var(--text-2xl); }
+.summary-details { overflow-wrap: anywhere; white-space: pre-line; }
+.slist { list-style: none; margin: 0; padding: 0; display: grid; border-top: 2px solid var(--color-border); }
+.slist li { display: flex; gap: var(--space-3); align-items: flex-start; padding-block: var(--space-3); border-bottom: 2px solid var(--color-border); font-weight: var(--weight-medium); overflow-wrap: anywhere; min-width: 0; }
+.slist li:last-child { border-bottom: 0; padding-bottom: 0; }
+.slist .num { margin-top: calc(-1 * var(--space-1)); }
+
+/* SuccessMark */
+.success-mark { display: grid; place-items: center; width: calc(var(--space-12) + var(--space-6)); height: calc(var(--space-12) + var(--space-6)); border-radius: var(--radius-full); background: var(--color-success-subtle); border: 2px solid var(--color-success); color: var(--color-success); transform: rotate(var(--rotate-tilt-sm)); }
+.success-mark .icon { width: var(--space-9); height: var(--space-9); }
+
+/* Skeleton */
+.skel { display: block; background: var(--chart-track); border-radius: var(--radius-full); animation: pulse 1.4s var(--ease-standard) infinite alternate; }
+.skel-line { height: var(--space-4); }
+.skel-title { height: var(--space-7); }
+.skel-row { height: var(--space-10); border-radius: var(--radius-md); }
+@keyframes pulse { from { opacity: 1; } to { opacity: 0.5; } }
+
+/* ConfirmDialog (bottom sheet on mobile, dialog from md) */
+.scrim { position: absolute; inset: 0; background: var(--color-scrim); z-index: var(--z-modal); display: flex; align-items: flex-end; }
+.sheet { width: 100%; background: var(--color-surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: var(--space-3) var(--space-5) var(--space-6); box-shadow: var(--shadow-lg); display: grid; gap: var(--space-4); }
+.sheet-handle { justify-self: center; width: var(--space-10); height: var(--space-1); border-radius: var(--radius-full); background: var(--color-border-strong); }
+.sheet-actions { display: grid; gap: var(--space-2); }
+@container (min-width: 700px) {
+  .scrim { align-items: center; justify-content: center; }
+  .sheet { max-width: 28rem; border-radius: var(--radius-lg); border: 2px solid var(--color-text); padding-top: var(--space-6); }
+  .sheet-handle { display: none; }
+  .sheet-actions { display: flex; flex-direction: row-reverse; justify-content: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation-duration: 2.4s !important; }
+  .orow.is-dragging, .hero-bars, .success-mark, .logo-mark { transform: none; }
+  .skel { animation: none; }
+  .btn:active { transform: none; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7.5v5.5M12 16.5v.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 11v5.5M12 7.5v.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></g></symbol>
+  <symbol id="i-single" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></symbol>
+  <symbol id="i-multi" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M14 7h7M14 17h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-bars" viewBox="0 0 24 24"><rect x="4" y="5" width="12" height="3.5" rx="1.75" fill="currentColor"/><rect x="4" y="10.25" width="16" height="3.5" rx="1.75" fill="currentColor"/><rect x="4" y="15.5" width="8" height="3.5" rx="1.75" fill="currentColor"/></symbol>
+</svg>
+
+<div class="pv">
+<header>
+  <h1>Create poll: components</h1>
+  <p>Direction: Option B, Playful. Spec: <code>specs/features/2026-09-14-create-poll.md</code>. Frames are 360px mobile unless marked desktop. The desktop frames cross the <code>md</code> breakpoint: the bottom bar stops sticking and the sheet becomes a centered dialog.</p>
+</header>
+<nav class="pv-nav" aria-label="Preview sections">
+  <a href="#landing">1 · Landing</a><a href="#form">2 · Form</a><a href="#options">3 · Options: drag and limits</a><a href="#errors">4 · Errors and saving</a><a href="#dialog">5 · Discard dialog</a><a href="#confirm">6 · Confirmation</a><a href="#desktop">7 · Desktop</a>
+</nav>
+
+<!-- ============ 1. LANDING ============ -->
+<section class="pv-section" id="landing">
+  <h2>1 · Landing page</h2>
+  <p><code>HeroCard</code> uses the emphasis-card pattern (tint + ink outline) with the tilted bars mark. The primary <code>Button</code> sits outside the card, so there is one orange focal point.</p>
+  <div class="frames">
+    <figure class="frame-wrap"><figcaption>Default</figcaption>
+      <div class="frame"><div class="screen">
+        <header class="nav"><a class="logo" href="#"><span class="logo-mark"><svg class="icon" aria-hidden="true"><use href="#i-bars"/></svg></span>Polls</a><span class="nav-user">dana_levi<span class="avatar" aria-hidden="true">D</span></span></header>
+        <main class="wrap stack">
+          <section class="card card-tint hero">
+            <div class="hero-bars" aria-hidden="true"><span></span><span></span><span></span></div>
+            <h1 class="h1">Welcome</h1>
+            <p>Create a poll and share it with others.</p>
+          </section>
+          <button class="btn btn-primary btn-block" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Create poll</button>
+        </main>
+      </div></div>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 2. FORM ============ -->
+<section class="pv-section" id="form">
+  <h2>2 · Create poll form</h2>
+  <p>The question lives in the tinted emphasis card. <code>AnswerTypeSelector</code> reuses the answer-tile pattern (selected = filled action + check). <code>OptionEditorRow</code> is a tile: the header holds drag handle, number, move and remove buttons, and the input spans the full width below so long text wraps. Counters sit at the right of each field's helper row.</p>
+  <div class="frames">
+    <figure class="frame-wrap"><figcaption>Empty: form just opened</figcaption>
+      <div class="frame"><div class="screen">
+        <header class="nav"><a class="logo" href="#"><span class="logo-mark"><svg class="icon" aria-hidden="true"><use href="#i-bars"/></svg></span>Polls</a><span class="nav-user">dana_levi<span class="avatar" aria-hidden="true">D</span></span></header>
+        <main class="wrap stack">
+          <h1 class="h1">Create a poll</h1>
+          <div class="card card-tint field">
+            <label class="label" for="f1-q">Question</label>
+            <textarea class="input input-lg" id="f1-q" rows="1" maxlength="200" placeholder="What do you want to ask?" aria-describedby="f1-q-c"></textarea>
+            <div class="helper-row"><span class="counter" id="f1-q-c">0/200</span></div>
+            <div><button class="btn btn-ghost btn-sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Add details</button></div>
+          </div>
+          <fieldset class="fs">
+            <legend class="label">Answer type</legend>
+            <label class="achoice"><input type="radio" name="f1-t" checked><span class="aind" aria-hidden="true"><svg class="icon"><use href="#i-check"/></svg></span>Single choice — people pick one answer</label>
+            <label class="achoice"><input type="radio" name="f1-t"><span class="aind" aria-hidden="true"><svg class="icon"><use href="#i-check"/></svg></span>Multiple choice — people can pick more than one answer</label>
+          </fieldset>
+          <fieldset class="fs" aria-describedby="f1-o-help">
+            <legend class="label">Options</legend>
+            <p class="help" id="f1-o-help" style="margin-top:calc(-1 * var(--space-2))">Add 2 to 8 options. Drag to reorder.</p>
+            <ol class="olist">
+              <li class="orow">
+                <div class="orow-head">
+                  <button class="icon-btn grip" type="button" aria-label="Drag to reorder option 1"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button>
+                  <label class="num" for="f1-o1"><span class="sr-only">Option </span>1</label><span class="spacer"></span>
+                  <button class="icon-btn" type="button" aria-label="Move up option 1" disabled><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button>
+                  <button class="icon-btn" type="button" aria-label="Move down option 1"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button>
+                </div>
+                <textarea class="input" id="f1-o1" rows="1" maxlength="100" placeholder="Option 1"></textarea>
+                <div class="helper-row"><span class="counter">0/100</span></div>
+              </li>
+              <li class="orow">
+                <div class="orow-head">
+                  <button class="icon-btn grip" type="button" aria-label="Drag to reorder option 2"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button>
+                  <label class="num" for="f1-o2"><span class="sr-only">Option </span>2</label><span class="spacer"></span>
+                  <button class="icon-btn" type="button" aria-label="Move up option 2"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button>
+                  <button class="icon-btn" type="button" aria-label="Move down option 2" disabled><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button>
+                </div>
+                <textarea class="input" id="f1-o2" rows="1" maxlength="100" placeholder="Option 2"></textarea>
+                <div class="helper-row"><span class="counter">0/100</span></div>
+              </li>
+            </ol>
+            <button class="btn btn-secondary btn-dashed btn-block" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Add option</button>
+          </fieldset>
+          <p class="note">Move buttons: labels <span class="pending">PENDING</span> /product copy</p>
+        </main>
+        <div class="bottom-bar"><div class="bar-inner">
+          <button class="btn btn-ghost btn-sm btn-block" type="button">Cancel</button>
+          <button class="btn btn-primary btn-block" type="button">Create poll</button>
+        </div></div>
+      </div></div>
+    </figure>
+
+    <figure class="frame-wrap"><figcaption>Filled: details shown, Multiple choice, 4 options (one very long)</figcaption>
+      <div class="frame"><div class="screen">
+        <header class="nav"><a class="logo" href="#"><span class="logo-mark"><svg class="icon" aria-hidden="true"><use href="#i-bars"/></svg></span>Polls</a><span class="nav-user">dana_levi<span class="avatar" aria-hidden="true">D</span></span></header>
+        <main class="wrap stack">
+          <h1 class="h1">Create a poll</h1>
+          <div class="card card-tint stack-sm">
+            <div class="field">
+              <label class="label" for="f2-q">Question</label>
+              <textarea class="input input-lg" id="f2-q" rows="2" maxlength="200">Where should we hold the Q4 team offsite?</textarea>
+              <div class="helper-row"><span class="counter">41/200</span></div>
+            </div>
+            <div class="field">
+              <label class="label" for="f2-d">Details (optional)</label>
+              <textarea class="input input-multi" id="f2-d" rows="3" maxlength="1000">Budget is about ₪900 per person. We need a place that works for the Haifa and Beer Sheva teams too.</textarea>
+              <div class="helper-row"><span class="counter">104/1000</span></div>
+              <div><button class="btn btn-ghost btn-sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>Remove details</button></div>
+            </div>
+          </div>
+          <fieldset class="fs">
+            <legend class="label">Answer type</legend>
+            <label class="achoice"><input type="radio" name="f2-t"><span class="aind" aria-hidden="true"><svg class="icon"><use href="#i-check"/></svg></span>Single choice — people pick one answer</label>
+            <label class="achoice"><input type="radio" name="f2-t" checked><span class="aind" aria-hidden="true"><svg class="icon"><use href="#i-check"/></svg></span>Multiple choice — people can pick more than one answer</label>
+          </fieldset>
+          <fieldset class="fs">
+            <legend class="label">Options</legend>
+            <p class="help" style="margin-top:calc(-1 * var(--space-2))">Add 2 to 8 options. Drag to reorder.</p>
+            <ol class="olist">
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 1"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><label class="num" for="f2-o1"><span class="sr-only">Option </span>1</label><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 1" disabled><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 1"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 1"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" id="f2-o1" rows="1" maxlength="100">Tel Aviv — beach hotel</textarea><div class="helper-row"><span class="counter">22/100</span></div></li>
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 2"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><label class="num" for="f2-o2"><span class="sr-only">Option </span>2</label><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 2"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 2"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 2"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" id="f2-o2" rows="1" maxlength="100">Jerusalem</textarea><div class="helper-row"><span class="counter">9/100</span></div></li>
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 3"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><label class="num" for="f2-o3"><span class="sr-only">Option </span>3</label><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 3"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 3"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 3"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" id="f2-o3" rows="1" maxlength="100">Eilat</textarea><div class="helper-row"><span class="counter">5/100</span></div></li>
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 4"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><label class="num" for="f2-o4"><span class="sr-only">Option </span>4</label><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 4"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 4" disabled><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 4"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" id="f2-o4" rows="3" maxlength="100">Stay remote and spend the budget on a cooking workshop plus a weekend voucher for every family</textarea><div class="helper-row"><span class="counter">94/100</span></div></li>
+            </ol>
+            <button class="btn btn-secondary btn-dashed btn-block" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Add option</button>
+          </fieldset>
+        </main>
+        <div class="bottom-bar"><div class="bar-inner">
+          <button class="btn btn-ghost btn-sm btn-block" type="button">Cancel</button>
+          <button class="btn btn-primary btn-block" type="button">Create poll</button>
+        </div></div>
+      </div></div>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 3. OPTIONS ============ -->
+<section class="pv-section" id="options">
+  <h2>3 · Options: drag, limits, counters</h2>
+  <p>While dragging, the row lifts (<code>--shadow-md</code> plus a <code>--rotate-tilt-sm</code> tilt, <code>--ease-emphasized</code> on pick-up) and a dashed slot shows where it will land. At 8 options, "Add option" becomes <code>aria-disabled</code> and the limit hint appears with an icon. A counter at its limit turns ink and bold.</p>
+  <div class="frames">
+    <figure class="frame-wrap"><figcaption>Mid-drag: option 3 moving to position 2</figcaption>
+      <div class="frame"><div class="screen" style="min-height:0">
+        <main class="wrap stack">
+          <fieldset class="fs">
+            <legend class="label">Options</legend>
+            <ol class="olist">
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 1"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><span class="num" aria-hidden="true">1</span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 1" disabled><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 1"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 1"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" rows="1" aria-label="Option 1">Tel Aviv — beach hotel</textarea><div class="helper-row"><span class="counter">22/100</span></div></li>
+              <li class="drop-slot" aria-hidden="true"></li>
+              <li class="orow is-dragging" style="margin-top:calc(-1 * var(--space-10))"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 3"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><span class="num" aria-hidden="true">3</span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 3"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 3"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 3"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" rows="1" aria-label="Option 3">Eilat</textarea><div class="helper-row"><span class="counter">5/100</span></div></li>
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 2"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><span class="num" aria-hidden="true">2</span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 2"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 2" disabled><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 2"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" rows="1" aria-label="Option 2">Jerusalem</textarea><div class="helper-row"><span class="counter">9/100</span></div></li>
+            </ol>
+          </fieldset>
+        </main>
+      </div></div>
+    </figure>
+
+    <figure class="frame-wrap"><figcaption>Limits: 8 options, question counter at 200/200</figcaption>
+      <div class="frame"><div class="screen" style="min-height:0">
+        <main class="wrap stack">
+          <div class="card card-tint field">
+            <label class="label" for="f4-q">Question</label>
+            <textarea class="input input-lg" id="f4-q" rows="5" maxlength="200">Our team has grown a lot this year and we finally have budget for a proper two-day offsite, so which of these places would you most like to spend it in, given travel time from Haifa?!</textarea>
+            <div class="helper-row"><span class="counter at-limit">200/200</span></div>
+          </div>
+          <fieldset class="fs" aria-describedby="f4-hint">
+            <legend class="label">Options</legend>
+            <ol class="olist">
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 1"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><span class="num" aria-hidden="true">1</span><span class="spacer"></span><button class="icon-btn" type="button" disabled aria-label="Move up option 1"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 1"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 1"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" rows="1" aria-label="Option 1">Tel Aviv</textarea><div class="helper-row"><span class="counter">8/100</span></div></li>
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 2"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><span class="num" aria-hidden="true">2</span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 2"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 2"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 2"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" rows="1" aria-label="Option 2">Jerusalem</textarea><div class="helper-row"><span class="counter">9/100</span></div></li>
+              <li class="orow"><div class="orow-head"><span class="num" aria-hidden="true" style="margin-left:var(--space-11)">3</span><span class="spacer"></span></div><textarea class="input" rows="1" aria-label="Option 3">Eilat</textarea></li>
+              <li class="orow"><div class="orow-head"><span class="num" aria-hidden="true" style="margin-left:var(--space-11)">4</span><span class="spacer"></span></div><textarea class="input" rows="1" aria-label="Option 4">Haifa — Carmel cabins</textarea></li>
+              <li class="orow"><div class="orow-head"><span class="num" aria-hidden="true" style="margin-left:var(--space-11)">5</span><span class="spacer"></span></div><textarea class="input" rows="1" aria-label="Option 5">Galilee winery tour</textarea></li>
+              <li class="orow"><div class="orow-head"><span class="num" aria-hidden="true" style="margin-left:var(--space-11)">6</span><span class="spacer"></span></div><textarea class="input" rows="1" aria-label="Option 6">Dead Sea spa</textarea></li>
+              <li class="orow"><div class="orow-head"><span class="num" aria-hidden="true" style="margin-left:var(--space-11)">7</span><span class="spacer"></span></div><textarea class="input" rows="1" aria-label="Option 7">Mitzpe Ramon desert camp</textarea></li>
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 8"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><span class="num" aria-hidden="true">8</span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 8"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" disabled aria-label="Move down option 8"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 8"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" rows="1" aria-label="Option 8">Stay remote</textarea><div class="helper-row"><span class="counter">11/100</span></div></li>
+            </ol>
+            <button class="btn btn-secondary btn-dashed btn-block" type="button" aria-disabled="true" aria-describedby="f4-hint"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Add option</button>
+            <p class="limit-hint" id="f4-hint"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>You can add up to 8 options.</p>
+          </fieldset>
+          <p class="help">Rows 3–7 are shortened in this frame to save space.</p>
+        </main>
+      </div></div>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 4. ERRORS + SAVING ============ -->
+<section class="pv-section" id="errors">
+  <h2>4 · Validation, saving, save failure</h2>
+  <p>Field errors follow the brief: icon + bold danger text + danger border and tint, linked with <code>aria-describedby</code>. An invalid option row also turns its tile border danger. While saving, the primary button shows a spinner with the spec's "Creating…" label, and every control is locked. A failed save shows one <code>Alert</code> above the bottom bar.</p>
+  <div class="frames">
+    <figure class="frame-wrap"><figcaption>Validation: empty question, empty option, duplicate option</figcaption>
+      <div class="frame"><div class="screen" style="min-height:0">
+        <main class="wrap stack">
+          <div class="card card-tint field">
+            <label class="label" for="e1-q">Question</label>
+            <textarea class="input input-lg" id="e1-q" rows="1" placeholder="What do you want to ask?" aria-invalid="true" aria-describedby="e1-q-err e1-q-c"></textarea>
+            <div class="helper-row"><p class="field-error" id="e1-q-err"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>Enter a question.</p><span class="counter" id="e1-q-c">0/200</span></div>
+          </div>
+          <fieldset class="fs">
+            <legend class="label">Options</legend>
+            <ol class="olist">
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 1"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><span class="num" aria-hidden="true">1</span><span class="spacer"></span><button class="icon-btn" type="button" disabled aria-label="Move up option 1"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 1"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 1"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" rows="1" aria-label="Option 1">Yes</textarea><div class="helper-row"><span class="counter">3/100</span></div></li>
+              <li class="orow is-invalid"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 2"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><span class="num" aria-hidden="true">2</span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 2"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 2"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 2"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" rows="1" aria-label="Option 2" aria-invalid="true" aria-describedby="e1-o2-err">  </textarea><div class="helper-row"><p class="field-error" id="e1-o2-err"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>Fill in this option or remove it.</p><span class="counter">2/100</span></div></li>
+              <li class="orow is-invalid"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 3"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><span class="num" aria-hidden="true">3</span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 3"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" disabled aria-label="Move down option 3"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 3"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" rows="1" aria-label="Option 3" aria-invalid="true" aria-describedby="e1-o3-err"> yes</textarea><div class="helper-row"><p class="field-error" id="e1-o3-err"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>This option is already in the list.</p><span class="counter">4/100</span></div></li>
+            </ol>
+          </fieldset>
+        </main>
+      </div></div>
+    </figure>
+
+    <figure class="frame-wrap"><figcaption>Saving: locked, spinner</figcaption>
+      <div class="frame"><div class="screen" style="min-height:0">
+        <main class="wrap stack">
+          <div class="card card-tint field">
+            <label class="label" for="s1-q">Question</label>
+            <textarea class="input input-lg" id="s1-q" rows="2" readonly>Where should we hold the Q4 team offsite?</textarea>
+            <div class="helper-row"><span class="counter">41/200</span></div>
+          </div>
+          <fieldset class="fs" disabled>
+            <legend class="label">Answer type</legend>
+            <label class="achoice"><input type="radio" name="s1-t" checked><span class="aind" aria-hidden="true"><svg class="icon"><use href="#i-check"/></svg></span>Single choice — people pick one answer</label>
+            <label class="achoice"><input type="radio" name="s1-t"><span class="aind" aria-hidden="true"><svg class="icon"><use href="#i-check"/></svg></span>Multiple choice — people can pick more than one answer</label>
+          </fieldset>
+          <p class="help">Options list locked the same way (handles and move/remove buttons disabled).</p>
+        </main>
+        <div class="bottom-bar"><div class="bar-inner">
+          <button class="btn btn-ghost btn-sm btn-block" type="button" disabled>Cancel</button>
+          <button class="btn btn-primary btn-block is-loading" type="button" aria-disabled="true"><span class="spinner" aria-hidden="true"></span>Creating…</button>
+        </div></div>
+      </div></div>
+    </figure>
+
+    <figure class="frame-wrap"><figcaption>Save failed: form-level Alert, input kept</figcaption>
+      <div class="frame"><div class="screen" style="min-height:0">
+        <main class="wrap stack">
+          <div class="card card-tint field">
+            <label class="label" for="s2-q">Question</label>
+            <textarea class="input input-lg" id="s2-q" rows="2">Where should we hold the Q4 team offsite?</textarea>
+            <div class="helper-row"><span class="counter">41/200</span></div>
+          </div>
+          <p class="help">… answer type and options unchanged …</p>
+          <div class="alert" role="alert"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg><span>Couldn't create your poll. Check your connection and try again.</span></div>
+        </main>
+        <div class="bottom-bar"><div class="bar-inner">
+          <button class="btn btn-ghost btn-sm btn-block" type="button">Cancel</button>
+          <button class="btn btn-primary btn-block" type="button">Create poll</button>
+        </div></div>
+      </div></div>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 5. DIALOG ============ -->
+<section class="pv-section" id="dialog">
+  <h2>5 · ConfirmDialog: discard [Could]</h2>
+  <p>A bottom sheet on mobile. The danger action sits on top and the safe action at the bottom, near the thumb. Initial focus goes to "Keep editing", and Escape counts as Keep editing. From <code>md</code> it becomes a centered dialog (see Desktop).</p>
+  <div class="frames">
+    <figure class="frame-wrap"><figcaption>Mobile bottom sheet</figcaption>
+      <div class="frame"><div class="screen">
+        <header class="nav"><a class="logo" href="#"><span class="logo-mark"><svg class="icon" aria-hidden="true"><use href="#i-bars"/></svg></span>Polls</a><span class="nav-user">dana_levi<span class="avatar" aria-hidden="true">D</span></span></header>
+        <main class="wrap stack">
+          <h1 class="h1">Create a poll</h1>
+          <div class="card card-tint field"><span class="label">Question</span><div class="input input-lg">Where should we hold the Q4 team offsite?</div></div>
+        </main>
+        <div class="scrim">
+          <div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="d1-t" aria-describedby="d1-b">
+            <span class="sheet-handle" aria-hidden="true"></span>
+            <h2 class="h2" id="d1-t">Discard this poll?</h2>
+            <p id="d1-b">What you've entered will be lost.</p>
+            <div class="sheet-actions">
+              <button class="btn btn-danger btn-block" type="button">Discard</button>
+              <button class="btn btn-secondary btn-block" type="button">Keep editing</button>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 6. CONFIRMATION ============ -->
+<section class="pv-section" id="confirm">
+  <h2>6 · Confirmation screen</h2>
+  <p>A <code>SuccessMark</code> (check icon in a success-tinted circle) gives a playful success moment. <code>PollSummary</code> is read-only: the option rows are plain numbered list items with dividers, with no tile outline or shadow, so they don't look tappable. "Back to home" is primary for now. When Share invite link ships, its action becomes primary and both of these become secondary.</p>
+  <div class="frames">
+    <figure class="frame-wrap"><figcaption>Success</figcaption>
+      <div class="frame"><div class="screen">
+        <header class="nav"><a class="logo" href="#"><span class="logo-mark"><svg class="icon" aria-hidden="true"><use href="#i-bars"/></svg></span>Polls</a><span class="nav-user">dana_levi<span class="avatar" aria-hidden="true">D</span></span></header>
+        <main class="wrap stack">
+          <div class="stack-sm" style="justify-items:start">
+            <span class="success-mark" aria-hidden="true"><svg class="icon"><use href="#i-check"/></svg></span>
+            <h1 class="h1">Poll created</h1>
+            <p class="muted">Your poll is open and ready for answers.</p>
+          </div>
+          <article class="card stack-sm" aria-labelledby="c1-q">
+            <div class="meta"><span class="badge badge-open"><span class="dot" aria-hidden="true"></span>Open</span><span class="atype-tag"><svg class="icon" aria-hidden="true"><use href="#i-multi"/></svg>Multiple choice</span></div>
+            <h2 class="h1 summary-q" id="c1-q">Where should we hold the Q4 team offsite?</h2>
+            <p class="summary-details">Budget is about ₪900 per person. We need a place that works for the Haifa and Beer Sheva teams too.</p>
+            <ol class="slist">
+              <li><span class="num" aria-hidden="true">1</span><span>Tel Aviv — beach hotel</span></li>
+              <li><span class="num" aria-hidden="true">2</span><span>Jerusalem</span></li>
+              <li><span class="num" aria-hidden="true">3</span><span>Eilat</span></li>
+              <li><span class="num" aria-hidden="true">4</span><span>Stay remote and spend the budget on a cooking workshop plus a weekend voucher for every family</span></li>
+            </ol>
+          </article>
+        </main>
+        <div class="bottom-bar"><div class="bar-inner">
+          <button class="btn btn-secondary btn-block" type="button">Create another poll</button>
+          <button class="btn btn-primary btn-block" type="button">Back to home</button>
+        </div></div>
+      </div></div>
+    </figure>
+
+    <figure class="frame-wrap"><figcaption>Loading (on reload): Skeleton</figcaption>
+      <div class="frame"><div class="screen" style="min-height:0">
+        <main class="wrap stack" aria-busy="true">
+          <p class="muted" role="status">Loading poll…</p>
+          <div class="card stack-sm" aria-hidden="true">
+            <span class="skel skel-line" style="width:40%"></span>
+            <span class="skel skel-title"></span>
+            <span class="skel skel-title" style="width:70%"></span>
+            <span class="skel skel-row"></span>
+            <span class="skel skel-row"></span>
+            <span class="skel skel-row"></span>
+          </div>
+        </main>
+      </div></div>
+    </figure>
+
+    <figure class="frame-wrap"><figcaption>Load error</figcaption>
+      <div class="frame"><div class="screen" style="min-height:0">
+        <main class="wrap stack">
+          <div class="alert" role="alert"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg><span>We couldn't load this poll.</span></div>
+          <button class="btn btn-primary btn-block" type="button">Back to home</button>
+        </main>
+      </div></div>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 7. DESKTOP ============ -->
+<section class="pv-section" id="desktop">
+  <h2>7 · Desktop (md and up)</h2>
+  <p>Same single column, capped at <code>--container-max</code>. The bottom bar is no longer sticky: Cancel and Create poll sit side by side, right-aligned. The sheet becomes a centered dialog with its safe action on the left.</p>
+  <div class="frames">
+    <figure class="frame-wrap desktop"><figcaption>Desktop: form</figcaption>
+      <div class="frame"><div class="screen">
+        <header class="nav"><a class="logo" href="#"><span class="logo-mark"><svg class="icon" aria-hidden="true"><use href="#i-bars"/></svg></span>Polls</a><span class="nav-user">dana_levi<span class="avatar" aria-hidden="true">D</span></span></header>
+        <main class="wrap stack">
+          <h1 class="h1">Create a poll</h1>
+          <div class="card card-tint field">
+            <label class="label" for="k1-q">Question</label>
+            <textarea class="input input-lg" id="k1-q" rows="1">Where should we hold the Q4 team offsite?</textarea>
+            <div class="helper-row"><span class="counter">41/200</span></div>
+            <div><button class="btn btn-ghost btn-sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Add details</button></div>
+          </div>
+          <fieldset class="fs">
+            <legend class="label">Answer type</legend>
+            <label class="achoice"><input type="radio" name="k1-t" checked><span class="aind" aria-hidden="true"><svg class="icon"><use href="#i-check"/></svg></span>Single choice — people pick one answer</label>
+            <label class="achoice"><input type="radio" name="k1-t"><span class="aind" aria-hidden="true"><svg class="icon"><use href="#i-check"/></svg></span>Multiple choice — people can pick more than one answer</label>
+          </fieldset>
+          <fieldset class="fs">
+            <legend class="label">Options</legend>
+            <p class="help" style="margin-top:calc(-1 * var(--space-2))">Add 2 to 8 options. Drag to reorder.</p>
+            <ol class="olist">
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 1"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><span class="num" aria-hidden="true">1</span><span class="spacer"></span><button class="icon-btn" type="button" disabled aria-label="Move up option 1"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 1"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 1"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" rows="1" aria-label="Option 1">Tel Aviv — beach hotel</textarea><div class="helper-row"><span class="counter">22/100</span></div></li>
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 2"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><span class="num" aria-hidden="true">2</span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 2"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" aria-label="Move down option 2"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 2"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" rows="1" aria-label="Option 2">Jerusalem</textarea><div class="helper-row"><span class="counter">9/100</span></div></li>
+              <li class="orow"><div class="orow-head"><button class="icon-btn grip" type="button" aria-label="Drag to reorder option 3"><svg class="icon" aria-hidden="true"><use href="#i-grip"/></svg></button><span class="num" aria-hidden="true">3</span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="Move up option 3"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button><button class="icon-btn" type="button" disabled aria-label="Move down option 3"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><button class="icon-btn" type="button" aria-label="Remove option 3"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div><textarea class="input" rows="1" aria-label="Option 3">Eilat</textarea><div class="helper-row"><span class="counter">5/100</span></div></li>
+            </ol>
+            <button class="btn btn-secondary btn-dashed btn-block" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Add option</button>
+          </fieldset>
+        </main>
+        <div class="bottom-bar"><div class="bar-inner">
+          <button class="btn btn-ghost btn-sm btn-block" type="button">Cancel</button>
+          <button class="btn btn-primary btn-block" type="button">Create poll</button>
+        </div></div>
+      </div></div>
+    </figure>
+
+    <figure class="frame-wrap desktop"><figcaption>Desktop: discard dialog over form</figcaption>
+      <div class="frame"><div class="screen">
+        <header class="nav"><a class="logo" href="#"><span class="logo-mark"><svg class="icon" aria-hidden="true"><use href="#i-bars"/></svg></span>Polls</a><span class="nav-user">dana_levi<span class="avatar" aria-hidden="true">D</span></span></header>
+        <main class="wrap stack">
+          <h1 class="h1">Create a poll</h1>
+          <div class="card card-tint field"><span class="label">Question</span><div class="input input-lg">Where should we hold the Q4 team offsite?</div></div>
+        </main>
+        <div class="scrim">
+          <div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="d2-t" aria-describedby="d2-b">
+            <span class="sheet-handle" aria-hidden="true"></span>
+            <h2 class="h2" id="d2-t">Discard this poll?</h2>
+            <p id="d2-b">What you've entered will be lost.</p>
+            <div class="sheet-actions">
+              <button class="btn btn-danger" type="button">Discard</button>
+              <button class="btn btn-secondary" type="button">Keep editing</button>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </figure>
+
+    <figure class="frame-wrap desktop"><figcaption>Desktop: confirmation</figcaption>
+      <div class="frame"><div class="screen">
+        <header class="nav"><a class="logo" href="#"><span class="logo-mark"><svg class="icon" aria-hidden="true"><use href="#i-bars"/></svg></span>Polls</a><span class="nav-user">dana_levi<span class="avatar" aria-hidden="true">D</span></span></header>
+        <main class="wrap stack">
+          <div class="stack-sm" style="justify-items:start">
+            <span class="success-mark" aria-hidden="true"><svg class="icon"><use href="#i-check"/></svg></span>
+            <h1 class="h1">Poll created</h1>
+            <p class="muted">Your poll is open and ready for answers.</p>
+          </div>
+          <article class="card stack-sm">
+            <div class="meta"><span class="badge badge-open"><span class="dot" aria-hidden="true"></span>Open</span><span class="atype-tag"><svg class="icon" aria-hidden="true"><use href="#i-single"/></svg>Single choice</span></div>
+            <h2 class="h1 summary-q">Where should we hold the Q4 team offsite?</h2>
+            <ol class="slist">
+              <li><span class="num" aria-hidden="true">1</span><span>Tel Aviv — beach hotel</span></li>
+              <li><span class="num" aria-hidden="true">2</span><span>Jerusalem</span></li>
+              <li><span class="num" aria-hidden="true">3</span><span>Eilat</span></li>
+            </ol>
+          </article>
+        </main>
+        <div class="bottom-bar"><div class="bar-inner">
+          <button class="btn btn-secondary btn-block" type="button">Create another poll</button>
+          <button class="btn btn-primary btn-block" type="button">Back to home</button>
+        </div></div>
+      </div></div>
+    </figure>
+  </div>
+</section>
+</div>

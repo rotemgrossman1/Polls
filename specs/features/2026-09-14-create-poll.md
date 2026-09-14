@@ -1,6 +1,6 @@
 # Feature: Create poll
 
-**Status:** Approved
+**Status:** In Dev
 **Created:** 2026-09-14
 **Last updated:** 2026-09-14
 
@@ -177,3 +177,181 @@ The landing page is the app's start page. Until Register and log in ships, the a
 
 ## Changelog
 - 2026-09-14 — Spec created.
+
+---
+
+## Technical Plan
+
+**Plan status:** Approved
+**Author:** /dev
+**Last updated:** 2026-09-14
+
+### Summary
+Set up the server and client, then build Create poll end to end. Server: `users`, `polls`, `poll_options` tables. A router-level `requireUser` stand-in loads the seeded test user. Two endpoints: `POST /api/polls` (transactional, idempotent through `clientRequestId`) and `GET /api/polls/:pollId` (scoped to the creator; 404 otherwise). Client: three routes (landing, create form, confirmation), built only from catalog components styled through token-mapped Tailwind classes. Form state and validation live in a hook plus pure utils. Drag reordering is a hand-written Pointer Events hook, so it works with mouse and touch without a dependency. The [Could] discard dialog is included and triggered by Cancel only.
+
+### Story Coverage
+| Story | Priority | Covered by (tasks) |
+|-------|----------|--------------------|
+| Landing page with "Create poll" | Must | 7, 9, 10 |
+| Write a poll question | Must | 3, 4, 5, 6, 11, 13 |
+| 2–8 answer options | Must | 3, 4, 5, 6, 11, 12, 13 |
+| Single or multiple answers | Must | 3, 4, 12, 13 |
+| Drag options into order | Must | 5, 11, 12 |
+| Confirmation of created poll | Must | 6, 8, 14 |
+| Optional details | Should | 3, 4, 11, 13 |
+| Clear field errors | Should | 11, 13 |
+| Warning before leaving a half-filled form | Could | 15 |
+
+### Data Model
+All tables use `underscored` columns, `created_at` / `updated_at`, and UUID primary keys defaulting to `gen_random_uuid()`. Every migration has a `down` that drops what `up` created.
+- **`users`**: `id` UUID PK; `username` VARCHAR(50) NOT NULL UNIQUE. (Register adds `password_hash` later.)
+- **`polls`**: `id` UUID PK; `creator_id` UUID NOT NULL FK → `users.id` ON DELETE CASCADE; `question` VARCHAR(200) NOT NULL; `details` VARCHAR(1000) NULL; `answer_type` VARCHAR(10) NOT NULL CHECK IN ('single','multiple'); `status` VARCHAR(10) NOT NULL DEFAULT 'open' CHECK IN ('open','closed'); `client_request_id` UUID NOT NULL. UNIQUE (`creator_id`, `client_request_id`).
+- **`poll_options`**: `id` UUID PK; `poll_id` UUID NOT NULL FK → `polls.id` ON DELETE CASCADE; `text` VARCHAR(100) NOT NULL; `position` SMALLINT NOT NULL CHECK 0–7. UNIQUE (`poll_id`, `position`).
+- **Models:** `User` hasMany `Poll` (as `polls`, fk `creator_id`); `Poll` belongsTo `User` (as `creator`); `Poll` hasMany `PollOption` (as `options`); `PollOption` belongsTo `Poll`.
+- **Seeder:** creates the test user whose username comes from `TEST_USER_USERNAME`. Its `down` deletes that user.
+
+### API
+Envelope: `{ data, error }`. JSON field names are camelCase.
+
+Poll object: `{ id, question, details: string|null, answerType: 'single'|'multiple', status: 'open', createdAt, options: [{ id, text, position }] }`, with options sorted by position. `creatorId` and `clientRequestId` are never returned.
+
+| Method | Route | Auth | Validation | Success | Errors |
+|--------|-------|------|------------|---------|--------|
+| POST | /api/polls | `requireUser` (router) | body (strict): `question` trim 1–200, no line breaks; `details` optional string or null, trim, max 1000, empty → null; `answerType` enum; `options` 2–8 strings, each trim 1–100, no line breaks, unique by trim + lowercase; `clientRequestId` UUID | 201 `{ data: poll }` new. 200 `{ data: poll }` when this creator already used `clientRequestId` (replay returns the existing poll) | 400 "Invalid request", 401 "Authentication required", 413 "Request too large", 500 "Something went wrong" |
+| GET | /api/polls/:pollId | `requireUser` (router) | params: `pollId` UUID; a malformed ID returns **404**, not 400 | 200 `{ data: poll }` | 404 "Poll not found" (doesn't exist, belongs to another user, or malformed ID), 401, 500 |
+
+Also: unknown `/api/*` routes → 404 envelope; malformed JSON → 400.
+
+### Backend
+Files at the server root: `server/app.js` (exports the app for Supertest) and `server/server.js` (listen), plus `.sequelizerc` pointing at `utils/dbConfig.js`, `migrations/`, `models/`, `seeders/`.
+- **utils:** `logger.js` (pino; silent under test; redacts authorization/cookie), `asyncHandler.js`, `httpErrors.js` (`AppError`, `NotFoundError`, `UnauthorizedError` carrying status and a public message), `dbConfig.js` (dev/test/prod from `DATABASE_URL` / `DATABASE_URL_TEST`; throws if the two are equal under test).
+- **middleware:** `requireUser.js` looks up the user whose username is in `TEST_USER_USERNAME` (reading only `id, username`) and sets `req.user`; missing user → 401 and an error log. Register later replaces only this file's body with JWT verification. `validate.js` takes `({ body, params, query }, { status })` Zod schemas, replaces `req.body` / `req.params` with the parsed values, and fails with 400 by default (404 for the poll-id params). `errorHandler.js` maps `AppError` → its status and message; body-parser errors → 400 / 413; everything else → 500 with a generic message. It logs method, route and user id, and never the body or stack traces to the client. `notFound.js`.
+- **app.js:** helmet → cors (`origin: CLIENT_URL`) → `express.json({ limit: '20kb' })` → pino-http → `/api` routes → notFound → errorHandler.
+- **Schemas:** `server/utils/pollSchemas.js`, with Zod schemas for create-poll body and poll-id params.
+- **services/pollService.js:**
+  - `createPoll({ creatorId, question, details, answerType, options, clientRequestId })` → `{ poll, created }`. It first looks up an existing `(creator_id, client_request_id)` and returns it with `created: false`. Otherwise one `sequelize.transaction` inserts the poll with `status 'open'` and then `bulkCreate`s the options with `position` = array index. If a concurrent insert hits the unique constraint (`UniqueConstraintError`), it reloads and returns the existing poll with `created: false`.
+  - `getPollForCreator({ pollId, creatorId })` runs `WHERE id AND creator_id` with explicit attributes and ordered options. Nothing found → `NotFoundError`.
+- **controllers/pollController.js** (thin): `create` → 201/200 depending on `created`. `getById` → 200.
+- **routes:** `routes/index.js` mounts `/polls`. `routes/polls.js` has `router.use(requireUser)`, `POST /` with validate, `GET /:pollId` with validate(params, 404).
+
+### Frontend
+- **Setup:** Vite React (JS). Tailwind 3.4 `tailwind.config.js` **replaces** the default theme sections: colors (semantic tokens only, plus `transparent` / `current`), spacing (`space-1…12` → `1…12`, plus `0`), fontSize (`xs…3xl`), fontWeight (`regular/medium/bold`), lineHeight (`tight/normal`), borderRadius (`sm/md/lg/full`), boxShadow (`sm/md/lg/none`), transition duration and easing, rotate (`tilt-sm/md`), zIndex, `maxWidth.container`, `maxWidth.dialog` (28rem, per catalog), `minHeight` / `minWidth` touch. `src/index.css` imports `styles/tokens.css` and sets `body` to `font-sans bg-bg text-text`. Reduced motion uses `motion-safe:` / `motion-reduce:` variants.
+- **Routes (`App.jsx`):** `/` → `LandingPage`; `/polls/new` → `CreatePollPage`; `/polls/:pollId/created` → `PollCreatedPage`; `*` → redirect to `/`.
+- **Pages:** `LandingPage.jsx`, `CreatePollPage.jsx` (form markup; logic lives in the hook), `PollCreatedPage.jsx`.
+- **Components (all from the catalog):** `Button`, `TextInput`, `PageLayout`, `NavBar` (logo only), `HeroCard`, `AnswerTypeSelector`, `OptionListEditor`, `OptionEditorRow` (handle, number badge, remove; **no move buttons**), `Alert`, `StatusBadge`, `PollSummary`, `SuccessMark`, `Skeleton`, `ConfirmDialog`. Icons are small inline SVGs (`currentColor`, `aria-hidden`) inside the component that uses them.
+- **Hooks:**
+  - `useCreatePollForm` holds question, detailsShown/details, answerType, options `[{ key, text }]`, submitAttempted, errors, saving, formError, and a `clientRequestId` (`crypto.randomUUID()`, created once per form mount). Its actions: add/remove/update/reorder option, show/remove details, submit.
+  - `useDragReorder`: Pointer Events on the handle, `setPointerCapture`, `touch-action: none`, a drop slot following the pointer, auto-scroll near viewport edges, Escape cancels. Midpoint math lives in a pure `getTargetIndex`.
+  - `usePoll(pollId, initialPoll)` returns `{ data, loading, error }`. It uses router state after create and fetches on reload.
+- **Services:** `services/apiConfig.js` (reads `import.meta.env.VITE_API_URL`; mapped to a stub in Jest), `services/api.js` (one axios instance; unwraps the envelope; throws `{ status }`; a JWT hook point is added by Register), `services/pollService.js` (`createPoll`, `getPoll`).
+- **Utils:** `uiCopy.js` (every spec string, word for word), `pollValidation.js` (`validatePollForm` → `{ question?, options: { [key]: 'empty'|'duplicate' } }`; normalizes with trim + lowercase; the error goes on later duplicates; empty beats duplicate), `reorder.js`, `singleLine.js` (typed or pasted line breaks → spaces for question and options).
+- **UI states:**
+  - Landing: static.
+  - Form default: empty question, details hidden, Single choice, 2 empty options, remove buttons hidden.
+  - Saving: Button in loading state with "Creating…" (`aria-disabled`); fields read-only; radios, handles, remove, Add option and Cancel disabled; a ref guard blocks re-entry.
+  - Field errors: shown under each field; focus goes to the first invalid field (question, then options top to bottom); after that errors are only **cleared** live and new ones appear on the next submit.
+  - Save failure: `Alert` above the bottom bar with the form-error copy; input kept; form unlocked; retry reuses the same `clientRequestId`.
+  - Success: `navigate('/polls/:id/created', { state: { poll } })`.
+  - Confirmation loading: `Skeleton` with "Loading poll…" (`role="status"`).
+  - Confirmation error (404 or any failure): `Alert` "We couldn't load this poll." plus "Back to home".
+  - Confirmation success: `SuccessMark`, "Poll created", intro, `PollSummary`, "Back to home" and "Create another poll".
+  - Discard dialog: shown on Cancel when anything was entered (any text in question, visible details or options, answer type changed, or option count ≠ 2). "Keep editing" is the initial focus; Escape or a scrim tap acts as keep editing.
+
+### Security
+- **Guest blocking:** deferred to Register. `requireUser` is applied at router level on `/api/polls`, so the swap later happens in one place.
+- **Create without a user:** `requireUser` returns 401 before the controller runs; nothing is saved.
+- **Someone else's poll:** the query is scoped by `creator_id`. Missing, foreign and malformed IDs all return the same 404, so existence is not revealed.
+- **Plain text:** React escaping only. No `dangerouslySetInnerHTML` anywhere; test strings include `<script>` and `<b>`.
+- **Server hardening:** helmet; CORS limited to `CLIENT_URL`; a 20kb body limit; strict Zod (unknown keys rejected); no stack traces or internals in responses; logs never include bodies or tokens.
+
+### Edge Cases
+- **Repeated clicks:** a synchronous ref guard plus the locked button on the client, and the idempotency key plus unique constraint on the server.
+- **Lost response, then retry:** the same `clientRequestId` returns the existing poll with 200, so no duplicate is created.
+- **Spaces-only or leading/trailing spaces:** trimmed in client validation and in Zod before saving.
+- **Case or space duplicates:** trim + lowercase comparison on both client and server.
+- **Pasting past the limit:** native `maxLength` cuts pasted text (UTF-16 counting, matched by Zod); the counter shows the maximum and the at-limit style.
+- **Max-length content at 360px:** `break-words` / `overflow-wrap:anywhere`, auto-grow textareas, no truncation, `whitespace-pre-wrap` for details.
+- **RTL and emoji:** `dir="auto"` on inputs and displayed user text; UTF-8 end to end.
+- **Remove details:** clears the text and hides the field; the payload sends `details: null`.
+- **Removing an option with an error:** errors are keyed by the option's stable `key`, so the error goes with it.
+- **Switching answer type:** only `answerType` changes.
+- **Refreshing the form:** no persistence.
+- **Refreshing the confirmation:** `usePoll` fetches by id.
+- **Keyboard reordering:** none, as the spec states; the handle has its label but no keyboard action.
+
+### Tests
+- **Unit (Jest, server):**
+  - `pollSchemas`: trim, limits, 1 and 9 options, spaces-only, case duplicates, line breaks, unknown keys, bad UUID.
+  - `errorHandler`: statuses; no stack in body.
+  - `requireUser`: found / missing user.
+  - `pollService`: stores trimmed values, order, `open` status, creator; replay returns existing; concurrent same key gives one poll; a failing option insert rolls back the poll; get works for own, 404s for foreign and missing.
+- **API integration (Supertest):**
+  - POST: 201 success; 400 for each validation rule; 401 (no test user); 200 on replay; 5 parallel identical requests give 1 poll; markup stored verbatim; 413 oversize; 400 malformed JSON.
+  - GET: 200 own; 404 foreign, missing and malformed; 401.
+  - Unknown `/api` route → 404 envelope.
+  - 403 doesn't apply (no roles in this feature); the foreign-poll 404 covers "unauthorized".
+- **Unit (Jest + RTL, client):**
+  - Utils: `pollValidation`, `reorder`, `singleLine`, `getTargetIndex`.
+  - Hooks: `useCreatePollForm` (add, remove, limit, clear-only errors, double-submit guard, failure keeps input); `usePoll`.
+  - Components: `Button` loading; `TextInput` counter / aria / error; `OptionListEditor` (remove hidden at 2, add disabled + hint at 8, focus after add/remove, simulated pointer drag reorders); `AnswerTypeSelector`; `ConfirmDialog` (focus, Escape); `PollSummary` plain text.
+  - Pages: Landing copy and navigation; CreatePollPage (validation messages and focus, "Creating…", failure alert, payload order and trim, remove details not sent, Cancel with and without the dialog); PollCreatedPage (loading, error, success, fetch on reload).
+- **E2E (Playwright):** owned by /qa.
+
+### Tasks
+Backend
+1. `chore:` server setup: package.json and scripts, app/server, logger, asyncHandler, httpErrors, errorHandler, notFound, dbConfig, `.sequelizerc`, Jest config and test-DB helpers (migrate in globalSetup, truncate per test, factories), `server/.env.example`, root `.gitignore`. Tests: errorHandler, notFound.
+2. `feat:` users migration, User model, test-user seeder, `requireUser`, and their tests.
+3. `feat:` polls + poll_options migrations, models, associations; model / constraint tests.
+4. `feat:` `validate` middleware + poll Zod schemas, and their tests.
+5. `feat:` `pollService` (transactional create, idempotency, creator-scoped get), and its tests.
+6. `feat:` poll controller + routes (POST, GET) and Supertest tests. → **Checkpoint 1** (also run migrations up/down/up).
+
+Frontend
+7. `chore:` client setup: Vite, React Router routes skeleton, Tailwind token mapping, `index.css`, Jest + Babel + RTL config, `client/.env.example`; smoke test.
+8. `feat:` axios instance, `apiConfig`, `pollService`, and their tests.
+9. `feat:` `Button`, `TextInput`, `Alert`, `PageLayout`, `NavBar`, and their tests.
+10. `feat:` `HeroCard` + `LandingPage`, and their tests.
+11. `feat:` `uiCopy`, `pollValidation`, `reorder`, `singleLine`, `useCreatePollForm`, and their tests.
+12. `feat:` `AnswerTypeSelector`, `OptionEditorRow`, `OptionListEditor`, `useDragReorder`, and their tests.
+13. `feat:` `CreatePollPage` (assemble, submit, saving, errors, failure), and its tests.
+14. `feat:` `StatusBadge`, `PollSummary`, `SuccessMark`, `Skeleton`, `usePoll`, `PollCreatedPage`, and their tests.
+15. `feat:` `ConfirmDialog` + discard on Cancel [Could], and their tests. → **Checkpoint 2** → captain's `/design` UI review → fixes → verify all acceptance criteria → handoff.
+
+### Decisions
+All made by the captain on 2026-09-14 unless marked as a dev proposal in this plan.
+- **Reorder:** drag only, per spec. The catalog's Move up/down buttons are not built.
+- **Design files:** committed to `main` by the captain before branching.
+- **Test user:** minimal `users` table + seeder; `requireUser` loads the user named in `TEST_USER_USERNAME` (new env var).
+- **Duplicate on retry:** idempotency key (`client_request_id`, unique per creator; a replay returns the existing poll with 200).
+- **Packages:** helmet approved. @dnd-kit, lucide-react and @fontsource/nunito declined, so drag is custom, icons are inline SVG, and Nunito falls back to system fonts. Also added: dotenv, cors, pino-http, React Testing Library + jest-dom + user-event, jest-environment-jsdom, babel-jest + presets, identity-obj-proxy, postcss, autoprefixer. No nodemon (`node --watch` instead).
+- **Poll IDs:** UUID.
+- **Discard dialog [Could]:** built now, triggered by Cancel only.
+- **Validation display:** the duplicate error goes on later duplicates; after a failed submit errors only clear live.
+- **Drag:** a custom Pointer Events hook.
+- **NavBar:** logo only until Register ships.
+- **Character counting:** native UTF-16 (`maxLength` / `.length`), matched by Zod.
+- **Tailwind:** v3.4 with default palette, spacing and radii replaced by token mappings.
+- **Dev proposals, approved with this plan:**
+  - VARCHAR + CHECK instead of Postgres ENUM, so later values are easy to add.
+  - Malformed poll ID → 404.
+  - Line breaks rejected in question and options (the client converts them to spaces).
+  - Replay returns the existing poll even if the payload differs.
+  - Unknown client routes redirect to `/`.
+  - Confirmation route is `/polls/:pollId/created`, leaving `/polls/:pollId` free for later features.
+  - Client tests use Jest, per `CLAUDE.md`, rather than Vitest.
+  - UI strings are kept in `utils/uiCopy.js`.
+  - 20kb body limit.
+
+### Risks & Open Questions
+- **For `/design` (dev does not edit the catalog):** remove Move up/down from `OptionEditorRow` / `OptionListEditor` and the live-region announcement; NavBar shows no user yet; the Nunito and icon deferred decisions are resolved as "no package"; the brief and catalog are still `Draft`.
+- **Accessibility:** drag-only reordering fails WCAG 2.5.7 / 2.1.1 for reordering. The spec accepts this; it is recorded for the post-MVP revisit.
+- **Custom drag:** needs manual testing on a real touch device (iOS Safari scroll vs. drag). Jest covers the logic, not real touch.
+- **`crypto.randomUUID()`:** needs a secure context. It works on localhost and on Render over HTTPS.
+- **Local setup:** the captain provides DB credentials in `server/.env` and creates the dev and test databases (or approves me running `createdb`).
+
+### Handoff Notes
+Filled in at hand off, for `/qa`.
+- Branch:
+- How to run (setup, seed data, env vars):
+- What to test first:
+- Known limitations:

@@ -61,6 +61,7 @@ Light theme only (MVP). All pairs below are checked against WCAG 2.2 AA (text 4.
 - **Outlines:** interactive cards, answer tiles, and secondary buttons use a 2px `--color-text` outline. Inputs use a 2px `--color-border-strong` outline.
 - **Shadows:** "sticker" offset shadows with no blur: `--shadow-sm` for tiles, `--shadow-md` for cards and primary buttons. `--shadow-lg` is a soft blur, only for overlays (bottom sheets, dialogs).
 - Primary buttons press down on click (move 2px, shadow removed).
+- **Tilt:** playful static tilts use `--rotate-tilt-sm` (-2deg: dragged option row, hero bars, success mark) and `--rotate-tilt-md` (-6deg: logo mark). No other tilt angles. Addition to the starter token set: a Transform category, a general role, not a one-off.
 
 ## Spacing & Density
 - Base unit 4px (`--space-1` … `--space-12`).
@@ -113,7 +114,9 @@ Follows the Results Chart Rules in `design.md`, styled as:
 ## Deferred Decisions
 - **Loading Nunito:** rounded system fonts exist only on Apple devices, so Windows and Android fall back to Segoe UI / Roboto. Recommendation: self-host Nunito so every device looks the same. This adds an npm dependency, so dev flags it as a tradeoff in the first frontend plan. Captain decides.
 - **Icon library:** Lucide style is the direction; the package (e.g. `lucide-react`) is a dev decision flagged in the first frontend plan.
+- **Option reorder copy:** Move up / Move down buttons on option rows (captain decision 2026-09-14, needed for WCAG 2.5.7) need accessible labels and a move announcement. Waiting on a `/product` change to `specs/features/2026-09-14-create-poll.md`. Preview marks them PENDING.
 - **Brand assets:** no logo or brand color supplied. The preview's tilted bars mark is a placeholder until the captain provides or approves a logo.
 
 ## Changelog
 - 2026-09-14 — Brief created. Option B — Playful chosen by the captain; Option A — Calm rejected. Changes from the preview: `--shadow-lg` made direction-neutral for sheets and dialogs; `--ease-emphasized` added so data animations use a non-overshooting `--ease-standard`.
+- 2026-09-14 — Added Transform tokens `--rotate-tilt-sm` (-2deg) and `--rotate-tilt-md` (-6deg) for Create poll components (dragged option row, hero bars, success mark, logo mark). Same change in `tokens.css`. No tokens renamed or removed.
