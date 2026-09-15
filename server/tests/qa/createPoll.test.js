@@ -361,7 +361,7 @@ describe('QA: Create poll API (adversarial)', () => {
 
       [created, fetched].forEach((res) => {
         expect(Object.keys(res.body).sort()).toEqual(['data', 'error']);
-        expect(Object.keys(res.body.data).sort()).toEqual(['answerType', 'createdAt', 'details', 'id', 'options', 'question', 'status']);
+        expect(Object.keys(res.body.data).sort()).toEqual(['answerType', 'createdAt', 'details', 'id', 'inviteCode', 'options', 'question', 'status']);
         res.body.data.options.forEach((o) => expect(Object.keys(o).sort()).toEqual(['id', 'position', 'text']));
         expect(res.text).not.toContain(alice.id);
         expect(res.text).not.toContain(alice.username);
