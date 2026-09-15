@@ -526,6 +526,14 @@ Dev proposals, approved with this plan:
 - Closed polls are not blocked from joining (deferred to Close poll).
 - No new npm packages.
 
+During Checkpoint 1 (2026-09-15):
+- **QA test conflict (captain):** `server/tests/qa/createPoll.test.js` ("success responses expose only the poll fields") locks the creator's poll to 7 keys, so adding `inviteCode` fails it. The plan stays as it is, and `/qa` adds `inviteCode` to that key list. Until then, this is the only failing server test.
+- **Dev, no flag needed:**
+  - Any other path under `/api/invites` (no code, extra path segments) also returns the "Poll not found" 404, so API responses stay identical for every non-working link.
+  - `X-Robots-Tag` is set by `server/middleware/noIndex.js` at router level, so error responses carry it too.
+  - Unicode escapes: source files write invisible, separator, control and combining characters as `\u` escapes, never raw (fix commit `b1622ee`).
+  - A right-to-left mark at the edge of a nickname is trimmed like any invisible character, the same as in Create poll. Inside the text it is kept.
+
 ### Risks & Open Questions
 - **No rate limiting** on the public invite endpoints (code guessing, nickname spam). 59.5 bits makes guessing impractical; a limiter would be a new dependency (e.g. `express-rate-limit`) and is proposed for later.
 - **Stale device memory:** if the participant row is gone (DB reset, poll deleted), the joined screen still shows while the poll loads. A deleted poll shows "This link doesn't work".
