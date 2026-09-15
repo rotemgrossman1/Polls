@@ -1,3 +1,5 @@
+import { removeInvisible, trimText } from './textRules';
+
 export const FIELD_ERROR = {
   EMPTY: 'empty',
   DUPLICATE: 'duplicate',
@@ -10,8 +12,9 @@ const BLANK = /^[\p{White_Space}\p{Default_Ignorable_Code_Point}]*$/u;
 
 const isBlank = (text) => BLANK.test(text);
 
-// Options match ignoring case, surrounding spaces and Unicode composition (as the API does).
-const normalizeOption = (text) => text.trim().toLowerCase().normalize('NFC');
+// Options match ignoring case, surrounding spaces, invisible characters and Unicode composition (as
+// the API does).
+const normalizeOption = (text) => removeInvisible(trimText(text)).toLowerCase().normalize('NFC');
 
 /**
  * Validates the Create poll form.

@@ -1,8 +1,19 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { COPY } from '../utils/uiCopy';
 import { ICON_PATHS, ICON_STROKE_WIDTH } from '../utils/iconPaths';
 import { cleanText } from '../utils/cleanText';
 import { toSingleLine } from '../utils/singleLine';
+
+// Single-line fields also turn line breaks and tabs into spaces.
+const cleanSingleLine = (text) => toSingleLine(cleanText(text));
+
+// Grows a field to fit its content. The height is border-box, so the borders are added to
+// scrollHeight (content plus padding).
+function fitHeight(field) {
+  field.style.height = 'auto';
+  const borders = field.offsetHeight - field.clientHeight;
+  field.style.height = `${field.scrollHeight + borders}px`;
+}
 
 const FIELD =
   'block w-full min-h-12 resize-none overflow-hidden break-words rounded-md border px-4 py-3 text-text ' +
@@ -32,20 +43,59 @@ export default function TextInput({
 }) {
   const localRef = useRef(null);
   const multiline = variant === 'multiline';
+  const clean = multiline ? cleanText : cleanSingleLine;
   const errorId = `${id}-error`;
   const counterId = `${id}-counter`;
   const atLimit = value.length >= maxLength;
 
-  // Grow the field to fit its content. The height is border-box, so the borders are added
-  // to scrollHeight (content plus padding).
   useLayoutEffect(() => {
-    const field = localRef.current;
-    if (field) {
-      field.style.height = 'auto';
-      const borders = field.offsetHeight - field.clientHeight;
-      field.style.height = `${field.scrollHeight + borders}px`;
+    if (localRef.current) {
+      fitHeight(localRef.current);
     }
   }, [value]);
+
+  // Text wraps differently when the field gets narrower or wider (rotating a phone), so fit again.
+  useEffect(() => {
+    const field = localRef.current;
+    if (!field || typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+    let width = field.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (field.clientWidth !== width) {
+        width = field.clientWidth;
+        fitHeight(field);
+      }
+    });
+    observer.observe(field);
+    return () => observer.disconnect();
+  }, []);
+
+  // Cleans typed or pasted text before the browser inserts it, so the caret stays right after it.
+  // Cleaning only in handleChange makes React write back a different value, which moves the caret to
+  // the end; handleChange still cleans anything that arrives another way.
+  useEffect(() => {
+    const field = localRef.current;
+    if (!field) {
+      return undefined;
+    }
+    const onBeforeInput = (event) => {
+      const text = event.data ?? event.dataTransfer?.getData('text/plain') ?? '';
+      if (!text || !event.inputType?.startsWith('insert')) {
+        return;
+      }
+      const cleaned = clean(text);
+      if (
+        cleaned !== text &&
+        typeof document.execCommand === 'function' &&
+        document.execCommand('insertText', false, cleaned)
+      ) {
+        event.preventDefault();
+      }
+    };
+    field.addEventListener('beforeinput', onBeforeInput);
+    return () => field.removeEventListener('beforeinput', onBeforeInput);
+  }, [clean]);
 
   function setRefs(node) {
     localRef.current = node;
@@ -57,8 +107,7 @@ export default function TextInput({
   }
 
   function handleChange(event) {
-    const cleaned = cleanText(event.target.value);
-    onChange(multiline ? cleaned : toSingleLine(cleaned));
+    onChange(clean(event.target.value));
   }
 
   function handleKeyDown(event) {

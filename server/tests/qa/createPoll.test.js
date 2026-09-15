@@ -37,6 +37,10 @@ function pollBody(overrides = {}) {
   };
 }
 
+// Builds text from code points, so invisible and control characters stay readable in this file.
+const ch = (...codePoints) => String.fromCodePoint(...codePoints);
+const BACKSLASH = ch(92);
+
 async function rowCounts() {
   return { polls: await Poll.count(), options: await PollOption.count() };
 }
@@ -378,6 +382,72 @@ describe('QA: Create poll API (adversarial)', () => {
     });
   });
 
+  // Round 2: the areas around the BUG-01 to BUG-05 fixes (QA Report, Test Strategy round 2).
+  describe('special characters, invisible text, and UTF-16 limits (round 2)', () => {
+    test.each([
+      ['a question of spaces, zero-width spaces, and a word joiner', { question: ` ${ch(0x200b)} ${ch(0x2060)} ` }],
+      ['an option of a soft hyphen and a zero-width joiner', { options: ['Pizza', ch(0xad, 0x200d)] }],
+      ['an option of only a right-to-left override', { options: ['Pizza', ch(0x202e)] }],
+    ])('rejects %s as empty and saves nothing', async (label, overrides) => {
+      await expectRejectedAndNothingSaved(overrides);
+    });
+
+    test('a third option equal to the first after NFC normalization and ignoring case is rejected and nothing is saved', async () => {
+      await expectRejectedAndNothingSaved({ options: [`Caf${ch(0xe9)}`, 'Tea', `CAFE${ch(0x301)}`] });
+    });
+
+    test('options that differ by an accent are not duplicates and are saved exactly as sent', async () => {
+      const options = ['Cafe', `Caf${ch(0xe9)}`];
+
+      const res = await request(app).post('/api/polls').send(pollBody({ options }));
+
+      expect(res.status).toBe(201);
+      const stored = await PollOption.findAll({ attributes: ['text'], order: [['position', 'ASC']], raw: true });
+      expect(stored.map((o) => o.text)).toEqual(options);
+    });
+
+    test('Hebrew text with right-to-left marks (not overrides) is saved exactly as sent', async () => {
+      const question = `מה אוכלים${ch(0x200f)}? ${randomUUID()}`;
+
+      const res = await request(app).post('/api/polls').send(pollBody({ question }));
+
+      expect(res.status).toBe(201);
+      expect((await Poll.findByPk(res.body.data.id, { attributes: ['question'] })).question).toBe(question);
+    });
+
+    test.each([
+      ['question', 200, (text) => ({ question: text }), (poll) => poll.question],
+      ['option', 100, (text) => ({ options: ['Pizza', text] }), (poll) => poll.options[1].text],
+      ['details', 1000, (text) => ({ details: text }), (poll) => poll.details],
+    ])('a %s of exactly %i UTF-16 units ending in an emoji is saved, and one unit more is rejected', async (field, limit, bodyWith, read) => {
+      const emoji = ch(0x1f600);
+      const exact = `${'a'.repeat(limit - 2)}${emoji}`;
+      const over = `${'a'.repeat(limit - 1)}${emoji}`;
+
+      const saved = await request(app).post('/api/polls').send(pollBody(bodyWith(exact)));
+      expect(saved.status).toBe(201);
+      expect(read(saved.body.data)).toBe(exact);
+
+      const rejected = await request(app).post('/api/polls').send(pollBody(bodyWith(over)));
+      expectCleanError(rejected, 400, INVALID);
+      expect(await Poll.count()).toBe(1);
+    });
+
+    test.each([
+      ['a null byte', 'u0000'],
+      ['an escape character', 'u001b'],
+      ['a lone high surrogate', 'ud800'],
+      ['a line separator', 'u2028'],
+    ])('%s sent as a JSON escape inside an option is rejected and nothing is saved', async (label, escape) => {
+      const raw = JSON.stringify(pollBody({ options: ['Pizza', 'SuMARKshi'] })).replace('MARK', BACKSLASH + escape);
+
+      const res = await request(app).post('/api/polls').set('Content-Type', 'application/json').send(raw);
+
+      expectCleanError(res, 400, INVALID);
+      expect(await rowCounts()).toEqual({ polls: 0, options: 0 });
+    });
+  });
+
   // Regression tests for open bugs (QA Report, Bugs). Expected to fail until dev fixes each bug
   // and removes `.failing` in the fix commit.
   describe('regression tests for open bugs', () => {
@@ -421,6 +491,50 @@ describe('QA: Create poll API (adversarial)', () => {
 
     test('BUG-05: 101 emoji in the question (202 UTF-16 units) is over the 200 limit and rejected', async () => {
       await expectRejectedAndNothingSaved({ question: '😀'.repeat(101) });
+    });
+
+    test('BUG-07: invisible characters around the question, details, and options are trimmed before saving', async () => {
+      const res = await request(app)
+        .post('/api/polls')
+        .send(
+          pollBody({
+            question: `${ch(0x200b)} Lunch? ${ch(0x2060)}`,
+            details: `${ch(0x200b)}Context${ch(0x200d)}`,
+            options: [`${ch(0x200b)}Pizza`, `Sushi ${ch(0x200b)}`],
+          }),
+        );
+
+      expect(res.status).toBe(201);
+      const stored = await Poll.findByPk(res.body.data.id, {
+        attributes: ['question', 'details'],
+        include: [{ model: PollOption, as: 'options', attributes: ['text', 'position'] }],
+        order: [[{ model: PollOption, as: 'options' }, 'position', 'ASC']],
+      });
+      expect(stored.question).toBe('Lunch?');
+      expect(stored.details).toBe('Context');
+      expect(stored.options.map((o) => o.text)).toEqual(['Pizza', 'Sushi']);
+    });
+
+    test('BUG-07: details of only spaces and invisible characters are saved as no details', async () => {
+      const res = await request(app).post('/api/polls').send(pollBody({ details: ` ${ch(0x200b, 0x2060)} ` }));
+
+      expect(res.status).toBe(201);
+      expect((await Poll.findByPk(res.body.data.id, { attributes: ['details'] })).details).toBeNull();
+    });
+
+    test.each([
+      ['a zero-width space', ['Yes', `Y${ch(0x200b)}es`]],
+      ['a zero-width joiner and a different case', ['Yes', `Y${ch(0x200d)}ES`]],
+    ])('BUG-08: options equal after ignoring invisible characters (%s inside) are rejected as duplicates', async (label, options) => {
+      await expectRejectedAndNothingSaved({ options });
+    });
+
+    test.each([
+      ['a right-to-left override inside an option', { options: ['Pizza', `abc${ch(0x202e)}def`] }],
+      ['a left-to-right override in the question', { question: `Lunch${ch(0x202d)}?` }],
+      ['a right-to-left isolate in the details', { details: `Context ${ch(0x2067)}here${ch(0x2069)}` }],
+    ])('BUG-09: rejects %s and saves nothing', async (label, overrides) => {
+      await expectRejectedAndNothingSaved(overrides);
     });
   });
 });

@@ -50,6 +50,18 @@ const FOCUS_RING_COLOR = 'rgb(15, 118, 110)'; // --color-focus
 const TOUCH_TARGET_MIN = 44; // --touch-target-min
 
 const unique = (label) => `${label} ${randomUUID().slice(0, 8)}`;
+// Builds text from code points, so invisible and control characters stay readable in this file.
+const ch = (...codePoints) => String.fromCodePoint(...codePoints);
+
+// Text fields whose content is taller than the field (auto-grow did not keep up).
+function fieldsNotFittingContent(page) {
+  return page
+    .getByRole('textbox')
+    .evaluateAll((fields) =>
+      fields.filter((f) => f.scrollHeight > f.clientHeight + 1).map((f) => `${f.id}: ${f.scrollHeight - f.clientHeight}px`),
+    );
+}
+
 const isCreateRequest = (req) => req.method() === 'POST' && new URL(req.url()).pathname === '/api/polls';
 
 const question = (page) => page.getByRole('textbox', { name: COPY.questionLabel, exact: true });
@@ -659,6 +671,149 @@ test.describe('create poll form', () => {
   });
 });
 
+/// Round 2: the areas around the BUG-01 to BUG-06 fixes (QA Report, Test Strategy round 2).
+test.describe('special characters and field sizing (round 2)', () => {
+  const LONG_OPTION = 'long option text '.repeat(6).slice(0, 100);
+  const LONG_QUESTION = 'Where should the whole team go for the end of year party this time around, and when?';
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/polls/new');
+  });
+
+  test('pasted control characters, tabs, and line separators are cleaned in every field, and the poll saves with the cleaned text', async ({ page }) => {
+    const tag = unique('Paste');
+    const cleanQuestion = `${tag} now ?`;
+
+    await question(page).click();
+    await page.keyboard.insertText(`${tag}${ch(0, 7)}\tnow${ch(0x2028)}?`);
+    await expect(question(page)).toHaveValue(cleanQuestion);
+    await expect(page.getByText(`${cleanQuestion.length}/200`, { exact: true })).toBeVisible();
+
+    await option(page, 1).click();
+    await page.keyboard.insertText(`Su${ch(0x1b)}shi${ch(0x85)}\tbar`);
+    await expect(option(page, 1)).toHaveValue('Sushi bar');
+
+    await option(page, 2).click();
+    await page.keyboard.insertText(`Pizza${ch(0x7f, 0x9b)}`);
+    await expect(option(page, 2)).toHaveValue('Pizza');
+
+    await page.getByRole('button', { name: COPY.addDetails, exact: true }).click();
+    await expect(details(page)).toBeFocused();
+    await page.keyboard.insertText(`Menu:\n\tPizza${ch(0)}\nEnd${ch(0x2028)}.`);
+    await expect(details(page)).toHaveValue(`Menu:\n\tPizza\nEnd${ch(0x2028)}.`);
+
+    const response = page.waitForResponse((res) => isCreateRequest(res.request()));
+    await createButton(page).click();
+
+    expect((await response).status()).toBe(201);
+    const summary = page.getByRole('article', { name: cleanQuestion });
+    await expect(summary.getByText('Sushi bar', { exact: true })).toBeVisible();
+    await expect(page.getByText(COPY.saveError, { exact: true })).toHaveCount(0);
+    expect(await countPollsByQuestion(cleanQuestion)).toBe(1);
+  });
+
+  test('pasting emoji past each limit keeps only whole emoji within the UTF-16 limit, and the poll saves', async ({ page }) => {
+    const emoji = ch(0x1f600);
+    const tag = unique('Emoji');
+    // 15 units of text plus 95 emoji is 205 units; an emoji cannot be half kept at 200.
+    const expectedQuestion = `${tag} ${emoji.repeat(92)}`;
+    expect(expectedQuestion.length).toBe(199);
+
+    await question(page).click();
+    await page.keyboard.insertText(`${tag} ${emoji.repeat(95)}`);
+    await expect(question(page)).toHaveValue(expectedQuestion);
+    await expect(page.getByText('199/200', { exact: true })).toBeVisible();
+
+    await option(page, 1).click();
+    await page.keyboard.insertText(`${'o'.repeat(99)}${emoji}`);
+    await expect(option(page, 1)).toHaveValue('o'.repeat(99));
+    await expect(page.getByText('99/100', { exact: true })).toBeVisible();
+
+    await option(page, 2).click();
+    await page.keyboard.insertText(emoji.repeat(51));
+    await expect(option(page, 2)).toHaveValue(emoji.repeat(50));
+    await expect(page.getByText('100/100', { exact: true })).toBeVisible();
+
+    await page.getByRole('button', { name: COPY.addDetails, exact: true }).click();
+    await page.keyboard.insertText(emoji.repeat(501));
+    await expect(details(page)).toHaveValue(emoji.repeat(500));
+    await expect(page.getByText('1000/1000', { exact: true })).toBeVisible();
+
+    const response = page.waitForResponse((res) => isCreateRequest(res.request()));
+    await createButton(page).click();
+
+    expect((await response).status()).toBe(201);
+    await expect(page.getByRole('article', { name: expectedQuestion })).toBeVisible();
+  });
+
+  test('a question and an option of only invisible characters show the empty errors and nothing is sent', async ({ page }) => {
+    const creates = countCreateRequests(page);
+    await question(page).fill(` ${ch(0x200b)} ${ch(0x2060)} `);
+    await option(page, 1).fill(ch(0x200d, 0xfeff, 0xad));
+    await option(page, 2).fill('Sushi');
+
+    await createButton(page).click();
+
+    await expect(page.getByText(COPY.questionError, { exact: true })).toBeVisible();
+    await expect(option(page, 1)).toHaveAccessibleDescription(/Fill in this option or remove it\./);
+    await expect(question(page)).toBeFocused();
+    expect(creates.count).toBe(0);
+  });
+
+  test('options that match after Unicode normalization and ignoring case show the duplicate error and nothing is sent', async ({ page }) => {
+    const creates = countCreateRequests(page);
+    await fillPoll(page, { questionText: unique('Coffee'), options: [`Caf${ch(0xe9)}`, 'Tea', `CAFE${ch(0x301)}`] });
+
+    await createButton(page).click();
+
+    await expect(option(page, 3)).toHaveAccessibleDescription(/This option is already in the list\./);
+    await expect(page.getByText(COPY.optionDuplicateError, { exact: true })).toHaveCount(1);
+    await expect(option(page, 3)).toBeFocused();
+    expect(creates.count).toBe(0);
+  });
+
+  test('every text field fits its content after wrapping and a long paste, and shrinks back after deleting to one line', async ({ page }) => {
+    const oneLineHeight = await option(page, 1).evaluate((f) => f.offsetHeight);
+
+    await question(page).click();
+    await page.keyboard.insertText(LONG_QUESTION);
+    await option(page, 1).click();
+    await page.keyboard.insertText(LONG_OPTION);
+    await page.getByRole('button', { name: COPY.addDetails, exact: true }).click();
+    await page.keyboard.insertText(Array.from({ length: 12 }, (_, i) => `Line ${i + 1}`).join('\n'));
+
+    expect(await fieldsNotFittingContent(page)).toEqual([]);
+    expect(await option(page, 1).evaluate((f) => f.offsetHeight)).toBeGreaterThan(oneLineHeight);
+
+    await option(page, 1).fill('Short');
+    await expect.poll(() => option(page, 1).evaluate((f) => f.offsetHeight)).toBe(oneLineHeight);
+    expect(await fieldsNotFittingContent(page)).toEqual([]);
+  });
+
+  test('with the text size set to 200% before the form loads, every text field fits its content', async ({ page }) => {
+    // A browser text size applies before the page renders. Layout changes after rendering are BUG-11.
+    await page.addInitScript(() => {
+      new MutationObserver((changes, observer) => {
+        if (document.head) {
+          const style = document.createElement('style');
+          style.textContent = 'html { font-size: 200% !important; }';
+          document.head.appendChild(style);
+          observer.disconnect();
+        }
+      }).observe(document, { childList: true, subtree: true });
+    });
+    await page.goto('/polls/new');
+
+    await question(page).fill(LONG_QUESTION);
+    await option(page, 1).fill(LONG_OPTION);
+    await page.getByRole('button', { name: COPY.addDetails, exact: true }).click();
+    await details(page).fill('Line one\nLine two\nLine three');
+
+    expect(await fieldsNotFittingContent(page)).toEqual([]);
+    await expectNoHorizontalScroll(page);
+  });
+});
+
 // Regression tests for open bugs (QA Report, Bugs). Marked test.fail() until dev fixes each bug.
 test.describe('regression tests for open bugs', () => {
   test('BUG-01: a question of only zero-width spaces shows the empty-question error and saves nothing', async ({ page }) => {
@@ -683,6 +838,54 @@ test.describe('regression tests for open bugs', () => {
       fields.filter((f) => f.scrollHeight > f.clientHeight + 1).map((f) => f.id + ': ' + (f.scrollHeight - f.clientHeight) + 'px'),
     );
     expect(tooShort).toEqual([]);
+  });
+
+  test('BUG-08: options that match after ignoring invisible characters show the duplicate error and nothing is sent', async ({ page }) => {
+    const creates = countCreateRequests(page);
+    await page.goto('/polls/new');
+    await fillPoll(page, { questionText: unique('Invisible duplicates'), options: ['Yes', `Y${ch(0x200b)}es`] });
+
+    await createButton(page).click();
+
+    await expect(option(page, 2)).toHaveAccessibleDescription(/This option is already in the list\./, { timeout: 3000 });
+    expect(creates.count).toBe(0);
+  });
+
+  test('BUG-09: a pasted direction-override character is removed from the field', async ({ page }) => {
+    await page.goto('/polls/new');
+    await option(page, 1).click();
+    await page.keyboard.insertText(`abc${ch(0x202e)}def`);
+
+    await expect(option(page, 1)).toHaveValue('abcdef', { timeout: 3000 });
+  });
+
+  test('BUG-10: pasting a tab or a control character into the middle of a field keeps the caret right after the pasted text', async ({ page }) => {
+    await page.goto('/polls/new');
+    await question(page).fill('Lunch today?');
+    await question(page).evaluate((f) => f.setSelectionRange(5, 5));
+    await page.keyboard.insertText(' at\tnoon');
+    await page.keyboard.type('X');
+    await expect(question(page)).toHaveValue('Lunch at noonX today?', { timeout: 3000 });
+
+    await page.getByRole('button', { name: COPY.addDetails, exact: true }).click();
+    await details(page).fill('Context here');
+    await details(page).evaluate((f) => f.setSelectionRange(7, 7));
+    await page.keyboard.insertText(`${ch(0)}!`);
+    await page.keyboard.type('X');
+    await expect(details(page)).toHaveValue('Context!X here', { timeout: 3000 });
+  });
+
+  test('BUG-11: text fields still fit their content after the window becomes narrower (e.g. rotating a phone)', async ({ page }) => {
+    await page.goto('/polls/new');
+    const { height } = page.viewportSize();
+    await page.setViewportSize({ width: 1024, height });
+    await question(page).fill('Where should the whole team go for the end of year party this time around, and when?');
+    await option(page, 1).fill('long option text '.repeat(6).slice(0, 100));
+    expect(await fieldsNotFittingContent(page)).toEqual([]);
+
+    await page.setViewportSize({ width: 360, height });
+
+    await expect.poll(() => fieldsNotFittingContent(page), { timeout: 3000 }).toEqual([]);
   });
 });
 

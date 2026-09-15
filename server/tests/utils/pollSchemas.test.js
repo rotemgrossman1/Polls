@@ -57,6 +57,50 @@ describe('createPollBody', () => {
     expect(result.success).toBe(true);
   });
 
+  test('trims spaces and invisible characters at the edges but keeps emoji variation selectors and flag tags', () => {
+    const heart = 'I \u2764\uFE0F';
+    const flag = '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}';
+    const result = parse(
+      validBody({
+        question: '\u200B Lunch? \u2060',
+        details: ' \u200DContext\u200B ',
+        options: ['\uFEFFPizza\u00AD', heart, flag],
+      }),
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.data.question).toBe('Lunch?');
+    expect(result.data.details).toBe('Context');
+    expect(result.data.options).toEqual(['Pizza', heart, flag]);
+  });
+
+  test('keeps invisible characters inside the text', () => {
+    const result = parse(validBody({ question: 'Lun\u200Bch?' }));
+
+    expect(result.data.question).toBe('Lun\u200Bch?');
+  });
+
+  test('details of only spaces and invisible characters become null', () => {
+    const result = parse(validBody({ details: ' \u200B\u2060 ' }));
+
+    expect(result.success).toBe(true);
+    expect(result.data.details).toBeNull();
+  });
+
+  test('flags that differ only in their tag characters are not duplicates', () => {
+    const england = '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}';
+    const wales = '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}';
+
+    expect(parse(validBody({ options: [england, wales] })).success).toBe(true);
+  });
+
+  test('keeps right-to-left marks, which are not direction overrides', () => {
+    const result = parse(validBody({ question: 'מה אוכלים\u200F?' }));
+
+    expect(result.success).toBe(true);
+    expect(result.data.question).toBe('מה אוכלים\u200F?');
+  });
+
   test('accepts multiple choice', () => {
     expect(parse(validBody({ answerType: 'multiple' })).success).toBe(true);
   });
@@ -119,6 +163,11 @@ describe('createPollBody', () => {
     ['option with a line separator', { options: ['Pizza', 'Su\u2028shi'] }],
     ['options differing only in case and spaces', { options: ['Yes', ' yes'] }],
     ['options equal after Unicode normalization', { options: ['Café', 'CAFE\u0301'] }],
+    ['options equal after ignoring invisible characters', { options: ['Yes', 'Y\u200BES'] }],
+    ['question with a right-to-left override', { question: 'Lunch\u202E?' }],
+    ['option with a left-to-right isolate', { options: ['Pizza', 'Su\u2066shi'] }],
+    ['details with a pop directional formatting character', { details: 'Context\u202C here' }],
+    ['question of only a left-to-right override', { question: '\u202D' }],
     ['non-string option', { options: ['Pizza', 42] }],
     ['options not an array', { options: 'Pizza,Sushi' }],
     ['invalid client request id', { clientRequestId: 'abc' }],
