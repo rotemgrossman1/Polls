@@ -111,6 +111,46 @@ describe('TextInput', () => {
     }
   });
 
+  test('cleans pasted text before the browser inserts it, so the caret stays after the pasted text', () => {
+    document.execCommand = jest.fn(() => true);
+    try {
+      render(<Controlled id="question" label="Question" maxLength={200} />);
+      const event = new InputEvent('beforeinput', {
+        data: 'at\u0000\u202E\tnoon',
+        inputType: 'insertFromPaste',
+        bubbles: true,
+        cancelable: true,
+      });
+
+      screen.getByLabelText('Question').dispatchEvent(event);
+
+      expect(document.execCommand).toHaveBeenCalledWith('insertText', false, 'at noon');
+      expect(event.defaultPrevented).toBe(true);
+    } finally {
+      delete document.execCommand;
+    }
+  });
+
+  test('lets text that needs no cleaning be inserted by the browser as typed', () => {
+    document.execCommand = jest.fn(() => true);
+    try {
+      render(<Controlled id="details" label="Details (optional)" maxLength={1000} variant="multiline" />);
+      const event = new InputEvent('beforeinput', {
+        data: 'Line one\n\tLine two',
+        inputType: 'insertText',
+        bubbles: true,
+        cancelable: true,
+      });
+
+      screen.getByLabelText('Details (optional)').dispatchEvent(event);
+
+      expect(document.execCommand).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    } finally {
+      delete document.execCommand;
+    }
+  });
+
   test('read-only fields cannot be edited', async () => {
     render(<Controlled id="question" label="Question" maxLength={200} initialValue="Lunch?" readOnly />);
     const field = screen.getByLabelText('Question');

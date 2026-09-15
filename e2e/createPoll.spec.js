@@ -860,7 +860,6 @@ test.describe('regression tests for open bugs', () => {
   });
 
   test('BUG-10: pasting a tab or a control character into the middle of a field keeps the caret right after the pasted text', async ({ page }) => {
-    test.fail(); // BUG-10
     await page.goto('/polls/new');
     await question(page).fill('Lunch today?');
     await question(page).evaluate((f) => f.setSelectionRange(5, 5));
