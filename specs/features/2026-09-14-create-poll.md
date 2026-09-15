@@ -341,6 +341,12 @@ All made by the captain on 2026-09-14 unless marked as a dev proposal in this pl
   - Client tests use Jest, per `CLAUDE.md`, rather than Vitest.
   - UI strings are kept in `utils/uiCopy.js`.
   - 20kb body limit.
+- **Package pin (dev, 2026-09-15):** `@vitejs/plugin-react` pinned to 5.2 (v6 has a Babel peer conflict with Jest's Babel 7 presets).
+- **/design UI review (captain, 2026-09-15):**
+  - Fixed: V1 (logo link touch target), V2 (h1 on loading and load-error screens), V3 (drag handle grip drawn as filled dots).
+  - V2 reuses existing spec copy as the heading: "Loading poll…" and "We couldn't load this poll." No new copy.
+  - Deferred for later: V4–V9 and design-system issues D1–D6.
+  - /qa deferred until V4–V9 are fixed, so the spec stays In Dev.
 
 ### Risks & Open Questions
 - **For `/design` (dev does not edit the catalog):** remove Move up/down from `OptionEditorRow` / `OptionListEditor` and the live-region announcement; NavBar shows no user yet; the Nunito and icon deferred decisions are resolved as "no package"; the brief and catalog are still `Draft`.
