@@ -12,6 +12,7 @@ const POLL = {
   details: 'Team lunch.\nBudget is small.',
   answerType: 'multiple',
   status: 'open',
+  inviteCode: 'q7Kx2Wm9aZ',
   createdAt: '2026-09-15T08:00:00.000Z',
   options: [
     { id: 'o1', text: 'Sushi', position: 0 },
@@ -128,5 +129,72 @@ describe('PollCreatedPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Create another poll' }));
 
     expect(screen.getByText('Empty Create poll form')).toBeInTheDocument();
+  });
+
+  test('Share poll is the main action in the bottom bar, and Back to home sits under the summary', () => {
+    renderPage(afterCreate());
+
+    const main = screen.getByRole('main');
+    const sharePoll = screen.getByRole('button', { name: 'Share poll' });
+    const createAnother = screen.getByRole('button', { name: 'Create another poll' });
+    const backHome = screen.getByRole('button', { name: 'Back to home' });
+
+    expect(main).not.toContainElement(sharePoll);
+    expect(main).not.toContainElement(createAnother);
+    // Secondary first, primary last.
+    // eslint-disable-next-line no-bitwise
+    expect(createAnother.compareDocumentPosition(sharePoll) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(sharePoll).toHaveClass('bg-action');
+    expect(createAnother).toHaveClass('bg-surface');
+
+    expect(main).toContainElement(backHome);
+    // eslint-disable-next-line no-bitwise
+    expect(screen.getByRole('article').compareDocumentPosition(backHome) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(backHome).toHaveClass('bg-transparent', 'min-h-touch');
+  });
+
+  test('Share poll opens the share sheet with the invite link, and Done returns focus to it', async () => {
+    renderPage(afterCreate());
+    const sharePoll = screen.getByRole('button', { name: 'Share poll' });
+
+    await userEvent.click(sharePoll);
+
+    const dialog = screen.getByRole('dialog', { name: 'Invite people' });
+    const link = within(dialog).getByRole('group', { name: 'Invite link' });
+    expect(link).toHaveTextContent(`${window.location.origin}/i/q7Kx2Wm9aZ`);
+    expect(link).not.toHaveTextContent('poll-1');
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Done' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(sharePoll).toHaveFocus();
+  });
+
+  test('after a reload, the share sheet shows the same link', async () => {
+    getPoll.mockResolvedValue(POLL);
+    renderPage('/polls/poll-1/created');
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Share poll' }));
+
+    expect(screen.getByRole('group', { name: 'Invite link' })).toHaveTextContent(
+      `${window.location.origin}/i/q7Kx2Wm9aZ`,
+    );
+  });
+
+  test('Share poll is not shown while loading or on the load error', async () => {
+    let rejectLoad;
+    getPoll.mockReturnValue(
+      new Promise((resolve, reject) => {
+        rejectLoad = reject;
+      }),
+    );
+    renderPage('/polls/poll-1/created');
+
+    expect(screen.queryByRole('button', { name: 'Share poll' })).not.toBeInTheDocument();
+
+    rejectLoad(Object.assign(new Error('Request failed'), { status: 404 }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("We couldn't load this poll.");
+    expect(screen.queryByRole('button', { name: 'Share poll' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

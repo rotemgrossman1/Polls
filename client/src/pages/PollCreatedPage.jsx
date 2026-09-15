@@ -4,16 +4,19 @@ import Alert from '../components/Alert';
 import Button from '../components/Button';
 import PageLayout from '../components/PageLayout';
 import PollSummary from '../components/PollSummary';
+import ShareInviteModal from '../components/ShareInviteModal';
 import Skeleton from '../components/Skeleton';
 import SuccessMark from '../components/SuccessMark';
 import usePoll from '../hooks/usePoll';
 import { COPY } from '../utils/uiCopy';
 import { ROUTES } from '../utils/routes';
+import { buildInviteLink } from '../utils/inviteLink';
 
 export default function PollCreatedPage() {
   const { pollId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const [shareOpen, setShareOpen] = useState(false);
 
   // The poll handed over by the create form, kept for this visit only.
   const [handedOverPoll] = useState(() => (location.state && location.state.poll) || null);
@@ -64,8 +67,8 @@ export default function PollCreatedPage() {
       <Button variant="secondary" block="mobile" onClick={() => navigate(ROUTES.newPoll)}>
         {COPY.confirmation.createAnother}
       </Button>
-      <Button block="mobile" onClick={goHome}>
-        {COPY.confirmation.backHome}
+      <Button icon="share" block="mobile" onClick={() => setShareOpen(true)}>
+        {COPY.share.sharePoll}
       </Button>
     </>
   );
@@ -78,6 +81,12 @@ export default function PollCreatedPage() {
         <p className="text-base text-text-muted">{COPY.confirmation.intro}</p>
       </div>
       <PollSummary poll={poll} />
+      <div>
+        <Button variant="ghost" size="sm" icon="home" onClick={goHome}>
+          {COPY.confirmation.backHome}
+        </Button>
+      </div>
+      <ShareInviteModal open={shareOpen} link={buildInviteLink(poll.inviteCode)} onClose={() => setShareOpen(false)} />
     </PageLayout>
   );
 }
