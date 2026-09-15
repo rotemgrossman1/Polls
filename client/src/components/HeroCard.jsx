@@ -3,7 +3,7 @@
 export default function HeroCard({ heading, intro }) {
   return (
     <section className="flex flex-col gap-4 rounded-lg border border-text bg-action-subtle p-5 shadow-md">
-      <div aria-hidden="true" data-testid="hero-bars" className="flex flex-col items-start gap-1 rotate-tilt-sm motion-reduce:rotate-0">
+      <div aria-hidden="true" data-testid="hero-bars" className="flex flex-col items-start gap-1 rotate-tilt-sm">
         <span className="h-4 w-12 rounded-full bg-action" />
         <span className="h-4 w-9 rounded-full bg-text" />
         <span className="h-4 w-6 rounded-full bg-border-strong" />
