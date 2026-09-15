@@ -583,3 +583,100 @@ During Checkpoint 2 (2026-09-15):
   - Deploy: Render's static site needs an SPA rewrite so `/i/*` serves `index.html`.
   - The QA key-list test above fails until `/qa` adds `inviteCode`.
   - Closed polls are not blocked from joining (deferred to Close poll).
+
+---
+
+## QA Report
+
+**QA status:** In Progress
+**Author:** /qa
+**Round:** 1
+**Last updated:** 2026-09-15
+
+### Test Strategy
+**Risk areas (highest first):**
+1. **Nickname uniqueness bypass:** two participants in one poll whose nicknames look the same (Unicode normalization, invisible characters inside the text, other space characters, letters that change length when lowercased), or a nickname that looks blank but is saved.
+2. **Duplicate or lost participants under concurrency:** mixed parallel joins (case and invisible variants of one nickname, one join key sent with different nicknames, many distinct nicknames at once), double submit, a retry after a lost response, and two tabs.
+3. **Existence leaks through links:** any response difference (status, body, headers) between non-working links, on both invite routes and in the UI. Also a malformed, huge, or injected code causing a 500.
+4. **Data leaks:** the invite and join responses, and the creator's poll, must never expose participants, poll ID, creator, options, join keys, or internals.
+5. **Every acceptance criterion in a real browser**, at desktop and 360px: share sheet, copy, device share, invite page, join, and joined screen.
+6. **UI states under failure:** a slow load, a 500, an aborted request, and a lost response, for loading the invite and for joining.
+7. **Device memory:** reload, new tab, two tabs, a new browser profile, blocked storage, and a poll deleted after joining.
+8. **Stored XSS** in the question, details and nickname.
+9. **Accessibility and responsiveness:**
+   - Keyboard-only share and join, with the sheet's focus trap and focus return.
+   - Touch targets, 360px layout with the longest content, 200% text size, and reduced motion.
+   - Automated WCAG 2.2 AA scans.
+
+| Area / Case | Layer | Why this layer |
+|-------------|-------|----------------|
+| Nickname look-alikes: NFC forms, soft hyphen and word joiner inside the text, NBSP and ideographic spaces, lowercase-expanding letters | Supertest (`server/tests/qa/shareAndJoinPoll.test.js`) | Uniqueness is decided by the API and the database; assertions query the DB. |
+| Blank-looking nicknames: Hangul filler, NBSP-only, ideographic-space-only, soft hyphen only | Supertest | Same. |
+| UTF-16 limit with emoji, a surrogate pair cut at 21; letters that expand when lowercased or normalized (20 × İ, 20 × U+FB2C, 10 × U+1D160) return 201 or 400, never 500 | Supertest | Boundary of the 20-unit column and the 80-unit key column. |
+| Types and mass assignment: nickname null, number, array or object; extra `id`, `nicknameKey`, `pollId`, `createdAt`, `__proto__`; text/plain, form-encoded or malformed JSON bodies; null byte, control characters and lone surrogates sent as JSON escapes | Supertest | Fully visible at the API; DB unchanged after each request. |
+| Code handling: a 5,000-character code, `%00`, full-width look-alike, `%20`, SQL-like text, percent-encoded path. Both routes must return identical status, body and relevant headers, and never a 500 | Supertest | Byte-level response comparison. |
+| Concurrency: variants of one nickname in parallel (one saved); one join key with different nicknames in parallel (one participant, every response has the same nickname); 10 distinct nicknames in parallel (10 saved); the same nickname in two polls in parallel | Supertest | `Promise.all` against the real DB. |
+| Leaks: POST returns only `nickname`; a 409 reveals nothing; GET invite never includes participants; the creator's `GET /api/polls/:id` has no participants; no internals in errors; `X-Robots-Tag` on 400, 404, 409 and 413 | Supertest | Response bodies and headers. |
+| Lifecycle: a raw-inserted poll (pre-feature shape) can be opened and joined; the invite code is stable across the creator's GETs; a deleted poll returns 404 on both routes and its participants are gone | Supertest | DB state. |
+| Share: Share poll only after the poll loads (not on a slow load or load error); exact sheet copy; link is origin + `/i/` + 10 base62 characters with no poll ID; Copy writes the clipboard, shows "Copied" for about 2 seconds and fills the live region; blocked copy shows the error and selects the link; Share link hidden or shown by support, with exact share text; AbortError shows no error; Done, Close, Escape and scrim close the sheet and return focus; same link after reopening and reloading; another user's poll has no Share poll; a long link wraps at 360px | Playwright (`e2e/shareAndJoinPoll.spec.js`), projects `chromium-desktop` and `mobile-360` | Needs a real browser; clipboard and Web Share are stubbed where the browser can't grant them. |
+| Open link: loading state (delayed route); exact invite content; no option text, poll ID or creator username in the DOM; every broken link (wrong case, cut off, made up, `/i`, `/i/`, `/i/a/b`, code plus segment) shows identical visible text and no form; tracking parameters, trailing slash and fragment open the poll; load failure (500 and abort) and Try again recovers; robots meta in every state; poll deleted after joining shows the broken-link page | Playwright, both projects | Same. |
+| Join: exact field copy, placeholder, help text and counter; typed and pasted text cut at 20 (with emoji); empty, spaces-only and invisible-only errors with focus and no request; taken error (including variants, seeded through the API) keeps the text, moves focus and clears on change; "Joining…" with the form locked; double click and repeated Enter save one participant (DB); join failure (500 and abort) shows the alert above the button, keeps the nickname and a retry saves one participant; a lost response and retry shows the joined screen with no taken error and one participant; joined screen content and focus on its heading; reload and new tab show the joined screen with no request; two tabs both on the form save one participant and show the first nickname; a new browser profile is a new participant and the earlier nickname is taken; the same nickname in two polls; the creator joins their own poll with an empty field; blocked storage still allows joining on the page; markup and script in question, details and nickname render as text | Playwright, both projects | Same; DB checks through `e2e/helpers/db.js`. |
+| Keyboard-only share and join; axe scans (share sheet, invite form, field errors, join error, joined screen, broken link, load error); 44px touch targets on new controls; no horizontal scroll at 360px with a 200-character question, 1,000 characters of details and a 20-character emoji and RTL nickname; 200% text size on the invite page; reduced motion on the sheet | Playwright, both projects | Same. |
+
+**Not tested (and why):**
+- **Token and JWT attacks:** there is no authentication yet, and invite routes are public by spec. Guest access to creator routes is already covered by the Create poll QA tests.
+- **Rate limiting, code brute force, timing side channels:** no limiter exists (known risk in the plan). Code randomness and alphabet are covered by dev's model tests.
+- **Real device share sheet and real phone clipboard:** Web Share is stubbed. The clipboard is read back in Chromium only; the captain checks on a phone by hand.
+- **Firefox and WebKit:** the required projects are Chromium only.
+- **Migration backfill on existing rows:** dev ran up, down, up at Checkpoint 1. Running down migrations inside the suite would wipe the test database. QA instead proves that a raw-inserted poll works through the API.
+- **Forced 500 on the invite API:** it can't be forced without mocking the database. The client's 500 handling is covered with `page.route`.
+- **Render SPA rewrite for `/i/*`:** deploy configuration. Locally, `vite preview` serves the route.
+- **Compatibility forms and full case folding** (full-width letters, ß and SS): out of scope, same as the captain's Create poll answer.
+- **Closed polls, answering, results, participant list:** out of scope.
+- **Browser Back after joining:** the spec doesn't define it, so it is observed and reported only.
+- **Invite code change without a page load, tabs submitting in the same millisecond:** accepted risks in the plan. The tab opened before a join in another tab is tested.
+
+**Questions for the captain:**
+- **A nickname of only Braille blank characters (U+2800)?** Accepted for MVP, consistent with Create poll (2026-09-15).
+- **Test strategy:** approved (2026-09-15).
+
+### Dev Test Audit
+| Test file / area | Finding | Action (sent to dev / none) |
+|------------------|---------|-----------------------------|
+| `PollCreatedPage`, `ShareInviteModal`, `Sheet`, `StickerHeading`, `EmptyState`, `Button`, `PollSummary`, `InvitePage` tests | Assert CSS class names (`bg-action`, `bg-success`, `break-all`, `rotate-tilt-sm`, `mt-2`…) and test hooks (`data-shape`, `data-icon`, `data-variant`). These are implementation details: a real visual regression would still pass. Same pattern as Create poll round 1. | Sent to dev (minor): replace with behavior assertions. QA proves the visible result in E2E ("Copied" state, wrapping, layout). |
+| `server/tests/api/invites.test.js`, "the same nickname can join another poll" | Status-only assertion; it doesn't check the body or that both participants exist. | Sent to dev (minor). |
+| `server/tests/api/invites.test.js`, POST 404 and error responses | POST 404 variants compare bodies but not headers, and `X-Robots-Tag` isn't checked on POST errors. | None: adversarial coverage, added by QA. |
+| `server/tests/api/invites.test.js`, routes overall | Real database, body and DB assertions, parallel joins, identical GET 404s including headers; public access tested without a user. 401 and 403 don't apply (public by spec). The env restore now deletes an unset variable (Create poll round 1 finding fixed). | None. |
+| `inviteService`, `poll` and `participant` model tests | Concurrency is asserted by DB counts; code format, uniqueness, case sensitivity and full alphabet use are covered; DB constraints are tested directly. | None. |
+| `joinedPolls`, `useInvite`, `useJoinPoll`, `clipboard` tests | Cover blocked and damaged storage, prototype-named keys, late responses, the retry key, and the full copy fallback chain. They fail when the guarded code breaks. | None. |
+| Client page tests | Mock the service layer, which is acceptable for unit tests; E2E covers the real API. | None. |
+
+### Tests Added
+- **Existing QA test updated:** `server/tests/qa/createPoll.test.js`, the response key list now includes `inviteCode` (captain decision at Checkpoint 1).
+- **Integration (Supertest):** `server/tests/qa/shareAndJoinPoll.test.js`, 96 cases.
+  - Nickname look-alikes: NFC, soft hyphen, word joiner, BOM, Hangul filler, no-break and ideographic spaces, RTL mark at the edge, dotted capital I, Hebrew presentation form.
+  - Blank-looking and invalid nicknames: Braille blank accepted per the captain; UTF-16 limit with emoji; letters that grow when lowercased or normalized.
+  - Types, extra fields, `__proto__`, and body formats.
+  - Links that open no poll, on both routes, with identical status, body and headers.
+  - Concurrency, response leaks, `X-Robots-Tag`, and invite code lifecycle (raw-inserted poll, stable code, deleted poll).
+  - 2 regression cases for BUG-01, marked `test.failing`.
+- **E2E (Playwright):** `e2e/shareAndJoinPoll.spec.js`, run in `chromium-desktop` and `mobile-360`.
+  - Share sheet: copy, blocked copy, device share, closing, same link.
+  - Opening links: loading, content, no leaks, identical broken-link page, tracking parameters, load failures, noindex, deleted poll.
+  - Joining: field, empty and taken errors, lock, failures, lost response, joined screen, reload, new tab, two tabs, another browser, two polls, creator, blocked storage, XSS.
+  - Keyboard, 44px targets, axe WCAG 2.2 AA, longest content, 200% text, reduced motion.
+  - New helper: `e2e/helpers/participants.js`.
+- **Test infrastructure fix:** `e2e/playwright.config.js` builds the client with `NODE_ENV=production`.
+  - `helpers/env.js` loads `server/.env` (`NODE_ENV=development`) into the Playwright process, so the E2E client had been a development React build that runs every effect twice.
+  - Every page load sent two identical API requests, which broke tests that fail or delay "the first" request.
+  - The config's stated intent is "same bundle users get". No app code changed.
+- **Notes:**
+  - Body-parser rejections (malformed JSON, 413) carry no `X-Robots-Tag`. They answer POST requests, which aren't crawled, and the spec only asks that invite pages not be listed, so this is not a bug.
+  - A broken percent-encoded invite path in the browser is answered by the static server before the app loads (`vite preview` returns its own 404). The page there depends on the host (Render rewrite), so it isn't in E2E; the API behavior is BUG-01.
+
+### Bugs
+| ID | Severity | Title | Steps to reproduce | Expected (spec) | Actual | Regression test | Status (Open / Fixed / Verified) |
+|----|----------|-------|--------------------|-----------------|--------|-----------------|----------------------------------|
+| BUG-01 | Minor | Broken percent-encoding in an invite code returns 500 instead of the "Poll not found" 404 | `GET /api/invites/q7Kx2Wm%E0%A4%A`, or `POST` to `/api/invites/q7Kx2Wm%E0%A4%A/participants` with a valid body. | The same 404 "Poll not found" as any code that opens no poll (approved plan: "404 for missing, wrong-case, cut-off and malformed codes"; CLAUDE.md: semantically correct status codes). | 500 "Something went wrong", logged as an unhandled error. Express's router throws a `URIError` carrying status 400 while decoding the parameter, and `errorHandler` turns any non-`AppError` into a 500. The same happens on `/api/polls/:pollId` (pre-existing). No poll data or existence is revealed, and the app never sends such a request (codes are encoded before calling the API). | `server/tests/qa/shareAndJoinPoll.test.js` BUG-01 (2 cases, `test.failing`) | Open |
+
+Severity note: rated Minor because it can't be reached from the app, reveals nothing, and the body is generic. The severity table's Major examples include "wrong status code", so the captain may raise it to Major, which would send the feature back to dev.
