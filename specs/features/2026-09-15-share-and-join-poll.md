@@ -1,6 +1,6 @@
 # Feature: Share and join poll
 
-**Status:** Approved
+**Status:** In QA
 **Created:** 2026-09-15
 **Last updated:** 2026-09-15
 
@@ -216,3 +216,370 @@ A creator can make a poll, but nobody else can reach it. Participants have no ac
 ## Changelog
 - 2026-09-15 — Spec created. Merges roadmap items Share invite link and Join poll with nickname (captain decision). Link codes are case-sensitive; device share text is "Answer my poll here:" plus the link (captain).
 - 2026-09-15 — Captain set status to Approved.
+
+---
+
+## Technical Plan
+
+**Plan status:** Approved
+**Author:** /dev
+**Last updated:** 2026-09-15
+
+### Summary
+Server:
+- Postgres function `generate_invite_code()` makes a random 10-character base62 code. It is the default of a new `polls.invite_code` column (unique, case-sensitive). The migration backfills existing polls.
+- New `participants` table. Nickname uniqueness is enforced by UNIQUE (`poll_id`, `nickname_key`), where `nickname_key` is the nickname with invisible characters removed, lowercased and NFC-normalized (same rule as option duplicates).
+- Joins are idempotent: each device sends a random per-poll `joinKey`, and UNIQUE (`poll_id`, `join_key`) means a replay returns the original participant.
+- Public router `/api/invites/:inviteCode`: GET invite and POST join. Every non-working code gets the same 404. The poll ID and creator are never exposed.
+- The creator's poll DTO gains `inviteCode`.
+
+Client:
+- `ShareInviteModal` on the confirmation screen, built on a new `Sheet` pulled out of `ConfirmDialog`.
+- Route `/i/:inviteCode` → `InvitePage`, covering loading, invite form, joined, link doesn't work, and load failed.
+- localStorage remembers `{ joinKey, nickname }` per invite code.
+- All components come from the catalog.
+
+### Story Coverage
+| Story | Priority | Covered by (tasks) |
+|-------|----------|--------------------|
+| Every poll has its own invite link | Must | 2, 5, 6 |
+| Share sheet from confirmation screen | Must | 7, 8, 9 |
+| Copy link in one tap | Must | 9 |
+| Invite link opens its poll | Must | 4, 5, 6, 11, 12 |
+| Clear message when link doesn't work | Must | 4, 5, 10, 12 |
+| Enter nickname and join | Must | 1, 3, 4, 5, 10, 11, 12 |
+| Told when nickname is taken | Must | 3, 4, 5, 11, 12 |
+| Poll remembers join on this device | Must | 4, 6, 11, 12 |
+| Send link with phone's share options | Should | 9 |
+| See question, details, option count before joining | Should | 4, 8, 12 |
+
+### Data Model
+**Migration `20260915000001-add-invite-code-to-polls`**, run in one transaction.
+
+Up:
+1. `CREATE FUNCTION generate_invite_code() RETURNS varchar(10)`, plpgsql, VOLATILE.
+   - Takes bytes from `uuid_send(gen_random_uuid())` (`pg_strong_random`), skipping the version and variant bytes (6 and 8).
+   - Rejects bytes ≥ 248 (62×4), so every character is equally likely.
+   - Maps each kept byte to `0-9A-Za-z` until 10 characters.
+2. Add `invite_code VARCHAR(10)` nullable.
+3. Backfill: `UPDATE polls SET invite_code = generate_invite_code()`.
+4. Set NOT NULL and DEFAULT `generate_invite_code()`.
+5. Add UNIQUE `polls_invite_code_key` and CHECK `polls_invite_code_check` (`invite_code ~ '^[0-9A-Za-z]{10}$'`).
+
+Down: drop the constraints and the column, then drop the function.
+
+Default column collation is byte-wise for this comparison, so codes are case-sensitive. Raw SQL inserts (e.g. QA's `e2e/helpers/db.js`) still get a code.
+
+**Migration `20260915000002-create-participants`:**
+- Columns:
+  - `id` UUID PK, default `gen_random_uuid()`
+  - `poll_id` UUID NOT NULL, FK → `polls.id`, ON DELETE CASCADE
+  - `nickname` VARCHAR(20) NOT NULL: trimmed, stored as saved
+  - `nickname_key` VARCHAR(80) NOT NULL, CHECK `<> ''`. Lowercasing can lengthen text, hence 80.
+  - `join_key` UUID NOT NULL
+  - `created_at`, `updated_at`
+- Constraints:
+  - UNIQUE `participants_poll_id_nickname_key_key` (`poll_id`, `nickname_key`)
+  - UNIQUE `participants_poll_id_join_key_key` (`poll_id`, `join_key`)
+- Down: drop table.
+
+**Models:**
+- `Poll.inviteCode`: STRING(10). No JS default, the DB fills it; Sequelize's Postgres RETURNING reads it back.
+- New `Participant` (`participants`, underscored).
+- `Poll` hasMany `Participant` as `participants` (CASCADE); `Participant` belongsTo `Poll`.
+- Test factory `createPoll` works unchanged; `createParticipant` is added.
+
+### API
+Envelope `{ data, error }`.
+
+Poll DTO for the creator (POST /api/polls, GET /api/polls/:pollId) gains `inviteCode`.
+
+Invite DTO: `{ question, details, status, optionCount }`. No id, creator, options, answer type or participants.
+
+| Method | Route | Auth | Validation | Success | Errors |
+|--------|-------|------|------------|---------|--------|
+| GET | /api/invites/:inviteCode | Public (no `requireUser` on this router) | params `inviteCode` `^[0-9A-Za-z]{10}$`; anything else → **404** | 200 `{ data: invite }` | 404 "Poll not found" (malformed, wrong case, cut off, missing: identical body and headers), 500 |
+| POST | /api/invites/:inviteCode/participants | Public | params as above (404). Body (strict): `nickname` = `singleLineText(20)` (same rules as the question: trims spaces and invisible characters at the edges, not blank, no line breaks, control or direction-override characters, UTF-16 length ≤ 20); `joinKey` UUID → 400 | 201 `{ data: { nickname } }` new participant. 200 `{ data: { nickname } }` when this `joinKey` already joined this poll; returns the **original** nickname even if the body's differs | 400 "Invalid request", 404, 409 "Nickname taken", 413, 500 |
+
+Every `/api/invites` response sends `X-Robots-Tag: noindex`.
+
+Params are validated before the body, so a malformed code always gets the 404. For a well-formed code, body validation (400) runs before the existence check, so a 400 reveals nothing about whether the poll exists.
+
+### Backend
+- **Refactor:** `server/utils/pollSchemas.js`'s text helpers (`trimText`, `singleLineText`, blank/control/direction rules, normalize for comparison) move to `server/utils/textRules.js`, with `normalizeText` = remove invisible characters, lowercase, NFC. `pollSchemas.js` imports them; its behavior is unchanged.
+- **Rules:** `server/utils/participantRules.js` holds `NICKNAME_MAX_LENGTH = 20`, and `INVITE_CODE_PATTERN` goes in `pollRules.js`.
+- **Schemas:** `server/utils/inviteSchemas.js` has `inviteCodeParams` and `joinBody`.
+- **Errors:** `httpErrors.js` adds `ConflictError` (409) and `NicknameTakenError`. Missing invites reuse `PollNotFoundError`.
+- **`services/pollService.js`:** `toPollDto` adds `inviteCode`. If `createPoll` hits `polls_invite_code_key` (practically never), it retries the transaction, up to 3 attempts.
+- **`services/inviteService.js`:**
+  - `getInvite({ inviteCode })`: finds the poll by `invite_code` with explicit attributes and `count` of options. Returns the invite DTO, or throws `PollNotFoundError`.
+  - `joinPoll({ inviteCode, nickname, joinKey })`:
+    1. Look up the poll id by code, or 404.
+    2. If a participant exists for (poll, joinKey), return `{ nickname: original, created: false }`.
+    3. Insert with `nicknameKey = normalizeText(nickname)`. This is a single insert, so no transaction.
+    4. On `UniqueConstraintError`, look up by (poll, joinKey) **again first**. If found, return it (`created: false`): a concurrent replay, so a retry is never told "taken". Otherwise, if the constraint is the nickname one, throw `NicknameTakenError`; anything else is rethrown.
+- **`controllers/inviteController.js`** (thin): `show` → 200; `join` → 201 or 200.
+- **Routes:** `routes/invites.js` has router-level `X-Robots-Tag` middleware, `GET /:inviteCode` and `POST /:inviteCode/participants`, each with validate(params, 404) then validate(body). `routes/index.js` mounts `/invites`.
+- Closed polls are **not** blocked from joining (the spec defers this to Close poll).
+
+### Frontend
+**Routes (`App.jsx`, `utils/routes.js`):**
+- `/i/:inviteCode` → `InvitePage`. React Router already matches a trailing slash and ignores query strings.
+- `/i` and `/i/*` → `InviteLinkBrokenPage`.
+- `invitePath(code)` uses `encodeURIComponent`.
+
+**Utils:**
+- `uiCopy.js` gains `share`, `invite`, `join`, `joined`, `inviteLink` sections, word for word from the spec. `{n} options` and `You're in, {nickname}` are template functions or parts.
+- `iconPaths.js` adds `link`, `copy`, `share`, `home`, `brokenLink`, `list`: Lucide-style geometry on a 24px grid, hand-authored, not copied from the preview.
+- `inviteLink.js`: `buildInviteLink(code)` = `window.location.origin` + `invitePath(code)`. No new env var.
+- `joinedPolls.js`: localStorage key `polls.joins` → `{ [inviteCode]: { joinKey, nickname? } }`. Provides `getJoin`, `getOrCreateJoinKey`, `saveJoin`. Every access is wrapped in try/catch; if storage is blocked it falls back to in-memory for the page's lifetime.
+- `nicknameRules.js`: `isBlankNickname` reuses the `BLANK` rule from `pollValidation`, moved into `textRules.js`.
+
+**Services:** `inviteService.js` provides `getInvite(code)` and `joinPoll(code, { nickname, joinKey })`.
+
+**Hooks:**
+- `useInvite(code)` → `{ data, loading, error, reload }`. `reload` powers "Try again", and late responses are ignored.
+- `useJoinPoll(code)`:
+  - State: `nickname`, `error` (`'empty'` | `'taken'` | null), `joining`, `joinFailed`, and `joinedNickname` (initially read from storage).
+  - Submit:
+    1. A ref guard blocks re-entry.
+    2. Blank → `'empty'`.
+    3. **Reads storage fresh.** If this device has already joined (another tab), switch to joined with the stored nickname and send no request.
+    4. Otherwise get or create `joinKey`, POST, then `saveJoin` and show joined.
+    5. A 409 sets `'taken'`; any other failure sets `joinFailed`.
+  - The empty error clears once the field is non-blank; the taken error clears on any change.
+
+**Components (catalog):**
+- **New:**
+  - `Sheet`: scrim, mobile handle, focus trap over all focusable elements, Escape and scrim tap call `onClose`, focus returns to the opener, body scroll lock, content scrolls inside, role and labels from props.
+  - `ShareInviteModal`
+  - `StickerHeading`
+  - `NicknameField`: large `TextInput`, `maxLength` 20, help text, `autocomplete="nickname"`, `enterkeyhint="go"`, Enter → `form.requestSubmit()`.
+  - `EmptyState`
+- **Changed:**
+  - `ConfirmDialog` now builds on `Sheet`; existing tests unchanged.
+  - `Button`: `success` prop.
+  - `TextInput`: `helpText` between the label and the field; `aria-describedby` order is error, help, counter; pass-through `autoComplete`, `enterKeyHint`, `onEnter`.
+  - `Alert`: `title` + `body`.
+  - `NavBar`: `variant="minimal"`, the same as today until Register ships. `PageLayout` gets a `navVariant` prop.
+  - `PollSummary`: `variant="invite"` (StatusBadge + list icon + "{n} options"), `bubble` tail, `useId` for the heading id because the invite DTO has no id.
+  - `Skeleton`: `sticker` shape.
+
+**`ShareInviteModal` behavior:**
+- `role="dialog"`, labelled by the title and described by the body. Initial focus on Copy.
+- Link box: `role="group"`, `aria-label="Invite link"`, text wraps, `select-all`.
+- Copy:
+  1. `navigator.clipboard.writeText`
+  2. If that fails, `execCommand('copy')` on a selection of the link text
+  3. If that fails, the error (`role="alert"`) plus the link text selected, and the button stays "Copy"
+- On success: "Copied" in the Button success state for 2s; each tap restarts the timer. A polite live region announces "Link copied".
+- "Share link" is rendered only when `typeof navigator.share === 'function'`. It calls `share({ text: 'Answer my poll here: ' + link })`. AbortError and any other rejection are ignored and the sheet stays open.
+- Done, Close, Escape and scrim all close the sheet.
+
+**Pages:**
+- `PollCreatedPage`:
+  - Success: `PollSummary` default, then "Back to home" as a ghost sm button with the home icon.
+  - Bottom bar: "Create another poll" (secondary), "Share poll" (primary, share icon) → `ShareInviteModal`.
+  - Loading and error are unchanged, with no Share poll button.
+- `InvitePage`: renders React 19 `<meta name="robots" content="noindex" />`, which React hoists into `<head>`, in every state. Then:
+  - Loading → the loading screen.
+  - 404 → `InviteLinkBrokenPage` content.
+  - Other error → load failed.
+  - Joined → the joined screen.
+  - Otherwise → the invite form.
+- `InviteLinkBrokenPage`: `NavBar` minimal + `EmptyState` (broken link icon, h1, body) + noindex meta. Used by both routes and `InvitePage`, so the page is identical for every non-working link.
+
+**UI states → components:**
+| State | Built from |
+|-------|-----------|
+| Loading | `role="status"` h1 "Loading poll…" + `aria-busy` `Skeleton` (sticker; poll card: line + two titles; nickname card: line + row) |
+| Invite | `StickerHeading` h1, `PollSummary` invite+bubble, `NicknameField`, bottom bar "Join poll" |
+| Joining | `Button loading` "Joining…", field read-only |
+| Field errors | `TextInput` error; focus moves to the field |
+| Join failed | `Alert` at the end of `<main>`, above the bottom bar |
+| Joined | `SuccessMark`, h1 "You're in, <bdi>{nickname}</bdi>", `PollSummary` invite+bubble, no bottom bar |
+| Link doesn't work | `EmptyState` |
+| Load failed | `Alert` title (h1) + body, then "Try again" primary (block on mobile) |
+
+### Security
+- **Link as key:** 10 base62 characters from the DB's strong RNG, unbiased, about 59.5 bits. Codes don't come from the poll ID or creation order. The invite DTO omits the id, creator and options.
+- **Existence not revealed:** malformed, wrong-case, cut-off and missing codes all get the same 404 body and headers (tested for equality). On the client, `/i`, `/i/*` and any 404 render the same `InviteLinkBrokenPage`.
+- **Share sheet creator-only:** `inviteCode` is only in the creator-scoped DTO (`requireUser` + `creator_id` filter), and another user's confirmation screen still gets 404, so there's no sheet.
+- **Nickname taken** reveals only that the name is in use in that poll (accepted in the spec).
+- **Device memory:** stores only the invite code, nickname and a random `joinKey` (no personal data), under the captain's 2026-09-15 decision.
+- **Search engines:** noindex meta on invite pages, and `X-Robots-Tag: noindex` on invite API responses.
+- **Plain text:** React escaping only. No `dangerouslySetInnerHTML`. The nickname is wrapped in `<bdi>` with `dir="auto"`, and tests use `<script>` / `<b>` strings.
+- **Input hardening:** strict Zod rejects unknown keys, the 20kb body limit and helmet are unchanged, and nicknames are rejected if they contain direction overrides or control characters.
+
+### Edge Cases
+| Edge case | How it's handled |
+|-----------|------------------|
+| Wrong case, made-up, mistyped or cut-off code | 404 → same page. `/i` with no code → same page. |
+| Tracking params or trailing slash | Router match ignores the query and a trailing slash. Tested. |
+| Registered user or creator opens the link | Public route, nothing prefilled. |
+| Same device returns (reload, new tab, another day) | Stored nickname → joined screen after the invite loads; no POST. |
+| Two tabs | Submit reads storage fresh; the server `joinKey` replay returns the first nickname. |
+| Double click / repeated Enter | Ref guard + locked button; server unique `join_key`. |
+| Lost response, then retry | Same `joinKey` → 200 with the original nickname, never 409. |
+| Same nickname at the same moment | UNIQUE (`poll_id`, `nickname_key`) → exactly one insert; the other gets 409. Tested with parallel requests. |
+| "Noa" / " noa" / "NOA" / invisible variants | Zod trim + `normalizeText` key. |
+| Blank or invisible-only nickname | Client `isBlank` → "Enter a nickname."; Zod rejects it too. |
+| Line breaks, tabs, control or direction characters | `TextInput` cleaning (`cleanText` + `toSingleLine`) removes them as typed or pasted. |
+| Paste over 20 characters | Native `maxLength` cuts it; counter shows 20/20. |
+| Long question/details, long nickname, long link at 360px | `break-words` / `whitespace-pre-wrap`; `<bdi>`; the link wraps with `break-all`. |
+| Copy tapped repeatedly | Copies each time; the 2s timer restarts. |
+| No Web Share support | "Share link" not rendered. |
+| Share cancelled | Rejection ignored. |
+| Network or server failure | Load failed with "Try again", or join failed with the nickname kept. |
+| Storage blocked | In-memory fallback: the join works but isn't remembered after reload. |
+| Existing polls | Migration backfill. Tested: a row inserted without a code gets one. |
+
+### Tests
+- **Unit (Jest, server):**
+  - `textRules`: moved `pollSchemas` cases still pass, plus `normalizeText`.
+  - `inviteSchemas`: code pattern (length, characters, case kept); nickname trim, 20 UTF-16 limit, blank or invisible-only, line breaks, tab, control, direction override, emoji + RTL accepted, unknown keys, bad UUID.
+  - Model tests:
+    - Polls: `generate_invite_code()` returns 10 base62 characters, distinct across 1,000 calls. The DB rejects a malformed or duplicate code, and codes that differ only in case are both allowed. A raw insert gets a code.
+    - Participants: nickname key unique per poll, same key allowed in another poll, join key unique per poll, cascade on poll delete.
+  - `inviteService`:
+    - Invite DTO has exactly its fields; missing code → 404.
+    - Join creates a participant with the trimmed nickname and key.
+    - Replay returns the original nickname.
+    - Case, space and invisible variants → taken.
+    - Same nickname in two polls → OK.
+    - 5 concurrent joins, same nickname, different keys → exactly 1 created, 4 taken.
+    - 5 concurrent joins, same key → exactly 1 participant, none taken.
+  - `pollService`: DTO includes `inviteCode`; it's the same on GET after reload; invite-code collision retries.
+- **API integration (Supertest):**
+  - GET invite:
+    - 200 shape, with no `id` / `creatorId` / `options` / `inviteCode` / `answerType`.
+    - 404 for missing, wrong-case, cut-off and malformed codes, each with a deep-equal body and the same relevant headers.
+    - Works when there's no test user (public).
+    - `X-Robots-Tag` header present.
+  - POST participants:
+    - 201 new; 200 replay with the original nickname.
+    - 409 taken, including a variant.
+    - 400 for each validation rule; 404 bad code; 413 oversize.
+    - Parallel same nickname → one saved.
+    - Public (no test user).
+  - Polls: `inviteCode` in POST and GET responses. Existing 401/404 tests unchanged.
+  - 403 doesn't apply: no roles, and invite routes are public by spec.
+- **Unit (Jest + RTL, client):**
+  - Utils: `joinedPolls` (storage blocked, get-or-create stable key), `inviteLink`, routes.
+  - Services: `inviteService` (encodes the code).
+  - Hooks:
+    - `useInvite`: reload, late response ignored.
+    - `useJoinPoll`: double submit → 1 request; taken; failure keeps the nickname; stored join → no request; saves on success; error clearing rules.
+  - Components:
+    - `Sheet`: focus trap, Escape, scrim, focus return, scroll lock.
+    - `ConfirmDialog`: existing tests.
+    - `ShareInviteModal`, with fake timers and mocked clipboard/share:
+      - "Copied" for 2s, and the timer restarts on each tap.
+      - Live region announces "Link copied".
+      - `execCommand` fallback; if blocked, error + selection.
+      - Share hidden/shown; share text exact; AbortError → no error.
+      - Done/Close/Escape/scrim close it.
+    - `NicknameField`: aria order, attributes, Enter submits, cut at 20.
+    - `Button` success; `TextInput` help text; `Alert` title/body; `PollSummary` invite (no options or answer type, plain text); `StickerHeading`; `EmptyState`; `Skeleton` sticker.
+  - Pages:
+    - `PollCreatedPage`: Share poll only in success; opens the sheet with the link; ghost Back to home.
+    - `InvitePage`: every UI state and copy; focus on errors; Try again refetches; remembered join; markup as plain text; robots meta.
+    - `App`: `/i/CODE/`, `/i/CODE?utm_source=x`, `/i`, `/i/a/b`.
+- **E2E (Playwright):** owned by /qa.
+- **Verification at each checkpoint:**
+  - `npm test` in `server/` and `client/`.
+  - `npm run db:migrate:undo` ×2, then `db:migrate`: up/down/up on the dev DB, checking backfill on existing polls.
+  - At Checkpoint 2, a manual walkthrough with the preview tools at 360px and desktop: create → share sheet (copy, Done focus return) → open link in a new tab → join → reload → joined; bad link; API stopped → load failed and join failed.
+
+### Tasks
+Branch: fast-forward the existing local `feature/2026-09-15-share-and-join-poll` (already merged, 0 commits ahead) to `main`, then commit there. Never pushed.
+
+Backend
+1. `refactor:` move shared text rules from `pollSchemas.js` to `textRules.js` (`normalizeText`, `BLANK`), with tests.
+2. `feat:` invite code migration (function, backfill, constraints), `Poll.inviteCode`, poll DTO `inviteCode`, collision retry, with model/service/API tests.
+3. `feat:` participants migration, `Participant` model and associations, factory, constraint tests.
+4. `feat:` invite schemas, `ConflictError` / `NicknameTakenError`, `inviteService` (`getInvite`, `joinPoll`), with tests.
+5. `feat:` invite controller + routes + `X-Robots-Tag`, Supertest tests. → **Checkpoint 1** (full server suite + migrations up/down/up).
+
+Frontend
+6. `feat:` uiCopy, routes, iconPaths, `inviteService`, `joinedPolls`, `inviteLink`, with tests.
+7. `refactor:` `Sheet` pulled out of `ConfirmDialog`, with tests.
+8. `feat:` `Button` success, `TextInput` help text, `Alert` title/body, `NavBar` minimal + `PageLayout` prop, `PollSummary` invite + bubble, `Skeleton` sticker, with tests.
+9. `feat:` `ShareInviteModal` + `PollCreatedPage` share changes, with tests.
+10. `feat:` `StickerHeading`, `NicknameField`, `EmptyState`, with tests.
+11. `feat:` `useInvite`, `useJoinPoll`, with tests.
+12. `feat:` `InvitePage`, `InviteLinkBrokenPage`, App routes, noindex, with tests. → **Checkpoint 2** → captain's `/design` UI review → fixes → acceptance criteria self-check → handoff.
+
+### Decisions
+Captain, 2026-09-15:
+- **Link code:** DB default `generate_invite_code()`, 10 base62 characters, unbiased, from `gen_random_uuid()`. Link format `/i/{code}`, matching the preview.
+- **Remember join / idempotency:** localStorage `{ joinKey, nickname }` per invite code. The server's unique (poll, join_key) replay returns the original participant.
+- **Nickname uniqueness:** `nickname_key` column (invisible characters removed, lowercase, NFC) + UNIQUE (poll_id, nickname_key); a violation → 409.
+- **Web Share / copy:** `share({ text })` only; hidden when unsupported; rejections ignored. Copy uses the Clipboard API, then `execCommand`, then error + select.
+
+Dev proposals, approved with this plan:
+- Invite API under public `/api/invites/:inviteCode`; taken → 409.
+- The client builds the link from `window.location.origin`, so no new env var.
+- Missing invites reuse the "Poll not found" 404.
+- Noindex via React 19 `<meta>` + `X-Robots-Tag`.
+- Joined screen trusts device memory without a server check.
+- Closed polls are not blocked from joining (deferred to Close poll).
+- No new npm packages.
+
+During Checkpoint 1 (2026-09-15):
+- **QA test conflict (captain):** `server/tests/qa/createPoll.test.js` ("success responses expose only the poll fields") locks the creator's poll to 7 keys, so adding `inviteCode` fails it. The plan stays as it is, and `/qa` adds `inviteCode` to that key list. Until then, this is the only failing server test.
+- **Dev, no flag needed:**
+  - Any other path under `/api/invites` (no code, extra path segments) also returns the "Poll not found" 404, so API responses stay identical for every non-working link.
+  - `X-Robots-Tag` is set by `server/middleware/noIndex.js` at router level, so error responses carry it too.
+  - Unicode escapes: source files write invisible, separator, control and combining characters as `\u` escapes, never raw (fix commit `b1622ee`).
+  - A right-to-left mark at the edge of a nickname is trimmed like any invisible character, the same as in Create poll. Inside the text it is kept.
+
+During Checkpoint 2 (2026-09-15):
+- **Focus after joining (captain):** after a join from the form, focus moves to the "You're in, {nickname}" heading, because the form is removed. Not moved when the joined screen is shown on load.
+- **"Try again" width (captain):** block on mobile; from `md`, auto width and left-aligned under the alert.
+- **Dev, no flag needed:**
+  - `Sheet`: a press that starts inside the sheet and ends on the scrim (e.g. selecting the link text) does not close it.
+  - `joinedPolls`: stored entries without a valid UUID `joinKey` are ignored; invite codes are plain keys (no prototype lookups); if a storage write fails, the entry is kept in memory for the page.
+  - `TextInput`: Enter that confirms an input method composition does not call `onEnter`.
+  - Copy fallback chain lives in `client/src/utils/clipboard.js`; nickname error codes are `NICKNAME_ERROR` in `nicknameRules.js`.
+  - Tailwind additions (catalog geometry, no new tokens): `rotate-45` for the bubble tail, `empty-state-icon` size (`--space-12` × 2).
+  - Test hooks: `data-icon` on `Button` icons, `data-shape` on `Skeleton`, `data-variant` on `NavBar`.
+  - Walkthrough (360px and desktop) passed every step: create, share sheet, copy, Done/Escape focus return, join, reload, bad links, tracking parameters, taken nickname, API stopped (join failed, load failed, Try again), two tabs.
+
+### Risks & Open Questions
+- **No rate limiting** on the public invite endpoints (code guessing, nickname spam). 59.5 bits makes guessing impractical; a limiter would be a new dependency (e.g. `express-rate-limit`) and is proposed for later.
+- **Stale device memory:** if the participant row is gone (DB reset, poll deleted), the joined screen still shows while the poll loads. A deleted poll shows "This link doesn't work".
+- **Tabs submitting within the same millisecond** could each create a `joinKey` before either writes storage, making two participants. This isn't realistic for a person; accepted.
+- **Deploy (Render):** the static site needs an SPA rewrite so `/i/*` serves `index.html`.
+- **`joinKey` as a future credential:** it will likely become the participant credential for Answer poll. It lives in localStorage, readable by same-origin JS (React escaping mitigates XSS).
+- **Invite code change without a page load:** `useJoinPoll` reads device memory once per mount, so its state would not reset if `/i/A` changed to `/i/B` inside the app. Nothing in the app navigates between invite links, so this cannot happen today.
+- **A tab opened before a join in another tab** keeps showing the form until its next submit, which then shows the stored nickname without a request.
+- **For `/design`** (dev does not edit the catalog): none so far.
+
+### Handoff Notes
+- **Branch:** `feature/2026-09-15-share-and-join-poll` (local, not pushed). Captain's `/design` UI review on 2026-09-15 reported no violations.
+- **How to run:**
+  - `server/.env` exists. `client/.env` does not: copy `client/.env.example` to `client/.env` (`VITE_API_URL=http://localhost:3000/api`).
+  - No new env vars in this feature.
+  - `server/`: `npm install`, `npm run db:migrate` (adds `polls.invite_code` with backfill and the `participants` table), `npm run db:migrate:test`, `npm run db:seed` (fixed test user), `npm run dev` (port 3000).
+  - `client/`: `npm install`, `npm run dev` (port 5173).
+  - Tests: `npm test` in `server/` and `client/`.
+- **Test results at hand off:**
+  - Client: 331 of 331 pass (35 suites).
+  - Server: 330 of 331 pass. The only failure is `server/tests/qa/createPoll.test.js` › "success responses expose only the poll fields, never creator or request ids". The poll DTO now includes `inviteCode`, and `/qa` adds it to that key list (Checkpoint 1 decision).
+  - The production Vite build passes.
+- **What to test first:**
+  - Create a poll, then "Share poll": Copy ("Copied" for 2 seconds), Done/Escape/scrim with focus return, and the same link after a reload.
+  - Open the link in a new tab, join, reload, then join again in a second tab that still shows the form.
+  - Bad links: wrong case, cut off, made up, `/i`, `/i/a/b`. All must look identical in the UI and in the API (`GET /api/invites/:inviteCode` 404 body and headers).
+  - Nickname uniqueness through the API: case, surrounding spaces, invisible characters, and parallel joins with the same nickname or the same `joinKey`.
+  - Stop the API during load and during join to see the load-failed and join-failed states.
+- **Endpoints:** `GET /api/invites/:inviteCode` and `POST /api/invites/:inviteCode/participants` with body `{ nickname, joinKey }`. Both are public (no test user needed) and send `X-Robots-Tag: noindex`. POST returns 201 on a new join, 200 on a `joinKey` replay (original nickname), 409 for a taken nickname, 400 for validation, 404 for a code that opens no poll, and 413 for an oversized body.
+- **Known limitations** (see Risks & Open Questions):
+  - No rate limiting on the public invite endpoints.
+  - Stale device memory: the joined screen trusts localStorage without a server check.
+  - An invite code change inside the app without a page load would not reset `useJoinPoll` (nothing navigates between invite links today).
+  - A tab opened before a join in another tab shows the form until its next submit.
+  - Deploy: Render's static site needs an SPA rewrite so `/i/*` serves `index.html`.
+  - The QA key-list test above fails until `/qa` adds `inviteCode`.
+  - Closed polls are not blocked from joining (deferred to Close poll).

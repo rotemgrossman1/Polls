@@ -1,0 +1,59 @@
+const { isBlank, normalizeText, singleLineText, trimText } = require('../../utils/textRules');
+
+describe('textRules', () => {
+  describe('normalizeText', () => {
+    test.each([
+      ['case', 'Noa', 'NOA'],
+      ['Unicode composition', 'Café', 'CAFE\u0301'],
+      ['invisible characters anywhere', 'Noa', 'N\u200Bo\u2060a\uFEFF'],
+    ])('treats texts differing only in %s as equal', (label, a, b) => {
+      expect(normalizeText(a)).toBe(normalizeText(b));
+    });
+
+    test('keeps spaces inside the text, so "Ice cream" and "Icecream" differ', () => {
+      expect(normalizeText('Ice cream')).not.toBe(normalizeText('Icecream'));
+    });
+
+    test('keeps emoji variation selectors and flag tags', () => {
+      const england = '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}';
+      const wales = '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}';
+
+      expect(normalizeText('❤\uFE0F')).toBe('❤\uFE0F');
+      expect(normalizeText(england)).not.toBe(normalizeText(wales));
+    });
+  });
+
+  test('trimText removes spaces and invisible characters at the edges only', () => {
+    expect(trimText('\u200B  No\u200Ba \u2060')).toBe('No\u200Ba');
+  });
+
+  test.each([
+    ['', true],
+    ['  \u200B\uFEFF ', true],
+    ['Noa', false],
+  ])('isBlank(%p) is %p', (text, expected) => {
+    expect(isBlank(text)).toBe(expected);
+  });
+
+  describe('singleLineText', () => {
+    const schema = singleLineText(20);
+
+    test('trims and accepts text up to the limit in UTF-16 units', () => {
+      expect(schema.parse('  Noa  ')).toBe('Noa');
+      expect(schema.safeParse('n'.repeat(20)).success).toBe(true);
+      expect(schema.safeParse('\u{1F600}'.repeat(10)).success).toBe(true);
+    });
+
+    test.each([
+      ['over the limit', 'n'.repeat(21)],
+      ['11 emoji (22 UTF-16 units)', '\u{1F600}'.repeat(11)],
+      ['blank', ' \u200B '],
+      ['a line break', 'No\na'],
+      ['a tab', 'No\ta'],
+      ['a control character', 'No\u0000a'],
+      ['a direction override', 'No\u202Ea'],
+    ])('rejects %s', (label, text) => {
+      expect(schema.safeParse(text).success).toBe(false);
+    });
+  });
+});

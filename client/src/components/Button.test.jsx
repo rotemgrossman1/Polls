@@ -76,4 +76,41 @@ describe('Button', () => {
     expect(screen.getByRole('button', { name: 'Create poll' })).toBeInTheDocument();
     expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
   });
+
+  test('success shows the success fill and a check icon in place of its icon, and stays usable', async () => {
+    const onClick = jest.fn();
+    const { container } = render(
+      <Button icon="copy" success onClick={onClick}>
+        Copied
+      </Button>,
+    );
+
+    const button = screen.getByRole('button', { name: 'Copied' });
+    expect(button).toHaveClass('bg-success', 'text-text-inverse');
+    expect(button).not.toHaveAttribute('aria-disabled');
+    expect(container.querySelectorAll('svg')).toHaveLength(1);
+    expect(container.querySelector('svg')).toHaveAttribute('data-icon', 'check');
+
+    await userEvent.click(button);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  test('without success, the button keeps its own icon and variant', () => {
+    const { container } = render(<Button icon="copy">Copy</Button>);
+
+    expect(screen.getByRole('button', { name: 'Copy' })).toHaveClass('bg-action');
+    expect(container.querySelector('svg')).toHaveAttribute('data-icon', 'copy');
+  });
+
+  test('loading wins over success', () => {
+    render(
+      <Button loading success>
+        Joining…
+      </Button>,
+    );
+
+    const button = screen.getByRole('button', { name: 'Joining…' });
+    expect(button).not.toHaveClass('bg-success');
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+  });
 });

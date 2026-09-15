@@ -1,4 +1,5 @@
-// UI copy, word for word from specs/features/2026-09-14-create-poll.md (UI Copy table).
+// UI copy, word for word from the specs' UI Copy tables:
+// specs/features/2026-09-14-create-poll.md and specs/features/2026-09-15-share-and-join-poll.md.
 export const COPY = {
   app: {
     name: 'Polls',
@@ -57,5 +58,45 @@ export const COPY = {
     createAnother: 'Create another poll',
     loading: 'Loading poll…',
     loadError: "We couldn't load this poll.",
+  },
+  share: {
+    sharePoll: 'Share poll',
+    title: 'Invite people',
+    body: 'Anyone with this link can join and answer your poll.',
+    copy: 'Copy',
+    copied: 'Copied',
+    copiedAnnouncement: 'Link copied',
+    copyError: "Couldn't copy the link. Select it and copy it yourself.",
+    shareLink: 'Share link',
+    shareText: (link) => `Answer my poll here: ${link}`,
+    done: 'Done',
+    close: 'Close',
+  },
+  inviteLink: {
+    label: 'Invite link',
+    brokenHeading: "This link doesn't work",
+    brokenBody: 'It may be mistyped or incomplete. Ask the person who shared it for a new link.',
+  },
+  invite: {
+    eyebrow: "You're invited",
+    optionCount: (n) => `${n} options`,
+    loading: 'Loading poll…',
+    loadError: "We couldn't load this poll.",
+    loadErrorBody: 'Check your connection and try again.',
+    tryAgain: 'Try again',
+  },
+  join: {
+    nicknameLabel: 'Your nickname',
+    nicknamePlaceholder: 'e.g. Noa',
+    nicknameHelp: "The poll's creator will see this name.",
+    joinButton: 'Join poll',
+    joiningButton: 'Joining…',
+    nicknameEmpty: 'Enter a nickname.',
+    nicknameTaken: 'This nickname is taken in this poll. Try another one.',
+    joinFailed: "Couldn't join the poll. Check your connection and try again.",
+  },
+  joined: {
+    // "You're in, {nickname}": the page renders the nickname after this, isolated in <bdi>.
+    headingPrefix: "You're in, ",
   },
 };

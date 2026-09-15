@@ -10,6 +10,7 @@ const models = {
   User: require('./user')(sequelize),
   Poll: require('./poll')(sequelize),
   PollOption: require('./pollOption')(sequelize),
+  Participant: require('./participant')(sequelize),
 };
 
 Object.values(models).forEach((model) => {

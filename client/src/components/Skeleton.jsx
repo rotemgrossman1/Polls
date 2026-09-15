@@ -4,6 +4,8 @@ const SHAPES = {
   line: 'h-4 rounded-full',
   title: 'h-7 rounded-full',
   row: 'h-10 rounded-md',
+  // Matches StickerHeading; the tilt is static, so it stays under reduced motion.
+  sticker: 'h-10 rounded-full rotate-tilt-sm',
 };
 
 const WIDTHS = {
@@ -18,6 +20,7 @@ export default function Skeleton({ variant = 'line', width = 'full' }) {
     <span
       aria-hidden="true"
       data-testid="skeleton"
+      data-shape={variant}
       className={`block bg-chart-track animate-skeleton-pulse motion-reduce:animate-none ${SHAPES[variant]} ${WIDTHS[width]}`}
     />
   );

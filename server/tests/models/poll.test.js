@@ -4,7 +4,7 @@ const {
   ForeignKeyConstraintError,
   UniqueConstraintError,
 } = require('sequelize');
-const { Poll, PollOption, User } = require('../../models');
+const { sequelize, Poll, PollOption, User } = require('../../models');
 const { resetDatabase, closeDatabase } = require('../helpers/db');
 const { createUser, createPoll } = require('../helpers/factories');
 
@@ -115,5 +115,58 @@ describe('Poll and PollOption models', () => {
     await User.destroy({ where: { id: user.id } });
     expect(await Poll.count({ where: { id: otherPoll.id } })).toBe(0);
     expect(await PollOption.count()).toBe(0);
+  });
+
+  describe('invite code', () => {
+    const INVITE_CODE = /^[0-9A-Za-z]{10}$/;
+
+    test('a new poll gets a 10-character base62 invite code from the database', async () => {
+      const poll = await createPoll({ creatorId: user.id });
+
+      expect(poll.inviteCode).toMatch(INVITE_CODE);
+      const stored = await Poll.findByPk(poll.id, { attributes: ['inviteCode'] });
+      expect(stored.inviteCode).toBe(poll.inviteCode);
+    });
+
+    test('a poll inserted with raw SQL gets an invite code too', async () => {
+      const [rows] = await sequelize.query(
+        "INSERT INTO polls (creator_id, question, answer_type, client_request_id) VALUES (:creatorId, 'Lunch?', 'single', gen_random_uuid()) RETURNING invite_code",
+        { replacements: { creatorId: user.id } },
+      );
+
+      expect(rows[0].invite_code).toMatch(INVITE_CODE);
+    });
+
+    test('generate_invite_code makes distinct codes that use the whole base62 alphabet', async () => {
+      const [rows] = await sequelize.query(
+        'SELECT generate_invite_code() AS code FROM generate_series(1, 1000)',
+      );
+      const codes = rows.map((row) => row.code);
+
+      codes.forEach((code) => expect(code).toMatch(INVITE_CODE));
+      expect(new Set(codes).size).toBe(1000);
+      expect(new Set(codes.join('')).size).toBe(62);
+    });
+
+    test.each([
+      ['too short', 'Ab3dE9'],
+      ['too long', 'Ab3dE9xYz2Q'],
+      ['with characters outside base62', 'Ab3dE9-Yz_'],
+    ])('the database rejects an invite code that is %s', async (label, inviteCode) => {
+      await expect(
+        Poll.create(pollAttributes(user.id, { inviteCode }), { validate: false }),
+      ).rejects.toBeInstanceOf(DatabaseError);
+    });
+
+    test('invite codes are unique and case-sensitive', async () => {
+      await Poll.create(pollAttributes(user.id, { inviteCode: 'AbCdEfGhIj' }));
+
+      await expect(
+        Poll.create(pollAttributes(user.id, { inviteCode: 'AbCdEfGhIj' })),
+      ).rejects.toBeInstanceOf(UniqueConstraintError);
+      await expect(
+        Poll.create(pollAttributes(user.id, { inviteCode: 'abcdefghij' })),
+      ).resolves.toBeInstanceOf(Poll);
+    });
   });
 });

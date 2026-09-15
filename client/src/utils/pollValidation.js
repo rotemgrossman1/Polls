@@ -1,4 +1,4 @@
-import { removeInvisible, trimText } from './textRules';
+import { isBlank, removeInvisible, trimText } from './textRules';
 
 export const FIELD_ERROR = {
   EMPTY: 'empty',
@@ -6,11 +6,6 @@ export const FIELD_ERROR = {
 };
 
 export const NO_ERRORS = { question: null, options: {} };
-
-// Only whitespace and invisible characters (zero-width spaces, joiners, BOM): counts as empty.
-const BLANK = /^[\p{White_Space}\p{Default_Ignorable_Code_Point}]*$/u;
-
-const isBlank = (text) => BLANK.test(text);
 
 // Options match ignoring case, surrounding spaces, invisible characters and Unicode composition (as
 // the API does).

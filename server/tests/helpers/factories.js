@@ -1,5 +1,6 @@
 const { randomUUID } = require('crypto');
-const { User, Poll, PollOption } = require('../../models');
+const { User, Poll, PollOption, Participant } = require('../../models');
+const { normalizeText } = require('../../utils/textRules');
 
 function createUser(overrides = {}) {
   return User.create({ username: `user-${randomUUID()}`, ...overrides });
@@ -22,4 +23,17 @@ async function createPoll({ creatorId, options = ['Pizza', 'Sushi'], ...override
   );
 }
 
-module.exports = { createUser, createPoll };
+// Creates a participant. Pass pollId, or a poll is created for it.
+async function createParticipant({ pollId, nickname = 'Noa', ...overrides } = {}) {
+  const ownerPollId = pollId || (await createPoll()).id;
+
+  return Participant.create({
+    pollId: ownerPollId,
+    nickname,
+    nicknameKey: normalizeText(nickname),
+    joinKey: randomUUID(),
+    ...overrides,
+  });
+}
+
+module.exports = { createUser, createPoll, createParticipant };

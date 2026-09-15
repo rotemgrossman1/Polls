@@ -1,4 +1,9 @@
-// Text rules for comparing options. Mirrors server/utils/pollSchemas.js.
+// Shared text rules for poll and nickname fields. Mirrors server/utils/textRules.js.
+
+// Only whitespace and invisible characters (zero-width spaces, joiners, BOM): counts as empty.
+const BLANK = /^[\p{White_Space}\p{Default_Ignorable_Code_Point}]*$/u;
+
+export const isBlank = (text) => BLANK.test(text);
 
 // Invisible format characters, except variation selectors and tag characters, which belong to the
 // emoji before them (a red heart, a flag).

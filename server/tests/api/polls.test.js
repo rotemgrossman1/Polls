@@ -59,6 +59,7 @@ describe('/api/polls', () => {
         details: 'Team lunch.\nBudget is small.',
         answerType: 'multiple',
         status: 'open',
+        inviteCode: expect.stringMatching(/^[0-9A-Za-z]{10}$/),
         createdAt: expect.any(String),
         options: [
           { id: expect.any(String), text: 'Tacos', position: 0 },
@@ -66,6 +67,10 @@ describe('/api/polls', () => {
           { id: expect.any(String), text: 'Sushi', position: 2 },
         ],
       });
+      // The invite code is not made from the poll id.
+      expect(res.body.data.id.replace(/-/g, '').toLowerCase()).not.toContain(
+        res.body.data.inviteCode.toLowerCase(),
+      );
 
       const stored = await Poll.findByPk(res.body.data.id);
       expect(stored.creatorId).toBe(user.id);

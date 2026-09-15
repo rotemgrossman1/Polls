@@ -103,6 +103,8 @@ module.exports = {
     },
     rotate: {
       0: '0deg',
+      // Catalog: PollSummary's bubble tail is a square turned 45deg, a shape rather than a tilt.
+      45: '45deg',
       'tilt-sm': token('rotate-tilt-sm'),
       'tilt-md': token('rotate-tilt-md'),
     },
@@ -126,9 +128,12 @@ module.exports = {
       },
       width: {
         'success-mark': `calc(${token('space-12')} + ${token('space-6')})`,
+        // Catalog: EmptyState icon circle is --space-12 x 2.
+        'empty-state-icon': `calc(${token('space-12')} * 2)`,
       },
       height: {
         'success-mark': `calc(${token('space-12')} + ${token('space-6')})`,
+        'empty-state-icon': `calc(${token('space-12')} * 2)`,
       },
       // Catalog: focus rings are a 3px outline; primary buttons press down 2px.
       outlineWidth: {

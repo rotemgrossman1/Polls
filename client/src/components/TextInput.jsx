@@ -21,16 +21,19 @@ const FIELD =
   'focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus';
 
 /**
- * Labeled text field with error message and character counter (catalog: TextInput).
+ * Labeled text field with help text, error message and character counter (catalog: TextInput).
  * Always a textarea so long text wraps and grows instead of scrolling out of view.
  * - `variant`: 'auto-grow' (single line, line breaks and tabs become spaces) or 'multiline'.
  *   Both remove control characters and lone surrogates, which the API rejects.
  * - `large`: question styling.
  * - `label`: omit when the caller renders its own <label htmlFor={id}> (option rows).
+ * - `helpText`: shown between the label and the field.
+ * - `onEnter`: single-line fields call it when Enter is pressed (Enter never adds a line break).
  */
 export default function TextInput({
   id,
   label,
+  helpText,
   value,
   onChange,
   maxLength,
@@ -39,14 +42,20 @@ export default function TextInput({
   large = false,
   error = null,
   readOnly = false,
+  autoComplete,
+  enterKeyHint,
+  onEnter,
   inputRef,
 }) {
   const localRef = useRef(null);
   const multiline = variant === 'multiline';
   const clean = multiline ? cleanText : cleanSingleLine;
   const errorId = `${id}-error`;
+  const helpId = `${id}-help`;
   const counterId = `${id}-counter`;
   const atLimit = value.length >= maxLength;
+  // Error first, then help text, then the counter.
+  const describedBy = [error && errorId, helpText && helpId, counterId].filter(Boolean).join(' ');
 
   useLayoutEffect(() => {
     if (localRef.current) {
@@ -111,8 +120,13 @@ export default function TextInput({
   }
 
   function handleKeyDown(event) {
-    if (!multiline && event.key === 'Enter') {
-      event.preventDefault();
+    if (multiline || event.key !== 'Enter') {
+      return;
+    }
+    event.preventDefault();
+    // Enter that confirms an input method composition (e.g. Japanese, Chinese) is not a submit.
+    if (onEnter && !event.nativeEvent.isComposing) {
+      onEnter(event);
     }
   }
 
@@ -126,6 +140,11 @@ export default function TextInput({
           {label}
         </label>
       )}
+      {helpText && (
+        <p id={helpId} className="text-sm text-text-muted">
+          {helpText}
+        </p>
+      )}
       <textarea
         id={id}
         ref={setRefs}
@@ -135,8 +154,10 @@ export default function TextInput({
         maxLength={maxLength}
         placeholder={placeholder}
         readOnly={readOnly}
+        autoComplete={autoComplete}
+        enterKeyHint={enterKeyHint}
         aria-invalid={error ? 'true' : undefined}
-        aria-describedby={error ? `${errorId} ${counterId}` : counterId}
+        aria-describedby={describedBy}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         className={[FIELD, fieldState, fieldSize].join(' ')}

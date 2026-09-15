@@ -1,8 +1,11 @@
 import { ICON_PATHS, ICON_STROKE_WIDTH } from '../utils/iconPaths';
 
-// Form-level or page-level failure message (catalog: Alert, danger variant).
-// `as` sets the text element, e.g. "h1" when the message is the screen's heading.
-export default function Alert({ children, as: TextElement = 'p' }) {
+/**
+ * Form-level or page-level failure message (catalog: Alert, danger variant).
+ * Either `children` (one message) or `title` + `body` (when the spec gives a heading and a body).
+ * `as` sets the message or title element, e.g. "h1" when it is the screen's heading.
+ */
+export default function Alert({ children, title, body, as: TextElement = 'p' }) {
   return (
     <div
       role="alert"
@@ -20,7 +23,14 @@ export default function Alert({ children, as: TextElement = 'p' }) {
       >
         <path d={ICON_PATHS.alert} />
       </svg>
-      <TextElement className="min-w-0 text-base font-medium text-text">{children}</TextElement>
+      {title ? (
+        <div className="flex min-w-0 flex-col">
+          <TextElement className="break-words text-base font-bold leading-normal text-text">{title}</TextElement>
+          {body && <p className="break-words text-base font-regular text-text">{body}</p>}
+        </div>
+      ) : (
+        <TextElement className="min-w-0 text-base font-medium text-text">{children}</TextElement>
+      )}
     </div>
   );
 }
