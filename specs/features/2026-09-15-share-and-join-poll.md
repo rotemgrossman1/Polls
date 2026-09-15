@@ -534,12 +534,26 @@ During Checkpoint 1 (2026-09-15):
   - Unicode escapes: source files write invisible, separator, control and combining characters as `\u` escapes, never raw (fix commit `b1622ee`).
   - A right-to-left mark at the edge of a nickname is trimmed like any invisible character, the same as in Create poll. Inside the text it is kept.
 
+During Checkpoint 2 (2026-09-15):
+- **Focus after joining (captain):** after a join from the form, focus moves to the "You're in, {nickname}" heading, because the form is removed. Not moved when the joined screen is shown on load.
+- **"Try again" width (captain):** block on mobile; from `md`, auto width and left-aligned under the alert.
+- **Dev, no flag needed:**
+  - `Sheet`: a press that starts inside the sheet and ends on the scrim (e.g. selecting the link text) does not close it.
+  - `joinedPolls`: stored entries without a valid UUID `joinKey` are ignored; invite codes are plain keys (no prototype lookups); if a storage write fails, the entry is kept in memory for the page.
+  - `TextInput`: Enter that confirms an input method composition does not call `onEnter`.
+  - Copy fallback chain lives in `client/src/utils/clipboard.js`; nickname error codes are `NICKNAME_ERROR` in `nicknameRules.js`.
+  - Tailwind additions (catalog geometry, no new tokens): `rotate-45` for the bubble tail, `empty-state-icon` size (`--space-12` × 2).
+  - Test hooks: `data-icon` on `Button` icons, `data-shape` on `Skeleton`, `data-variant` on `NavBar`.
+  - Walkthrough (360px and desktop) passed every step: create, share sheet, copy, Done/Escape focus return, join, reload, bad links, tracking parameters, taken nickname, API stopped (join failed, load failed, Try again), two tabs.
+
 ### Risks & Open Questions
 - **No rate limiting** on the public invite endpoints (code guessing, nickname spam). 59.5 bits makes guessing impractical; a limiter would be a new dependency (e.g. `express-rate-limit`) and is proposed for later.
 - **Stale device memory:** if the participant row is gone (DB reset, poll deleted), the joined screen still shows while the poll loads. A deleted poll shows "This link doesn't work".
 - **Tabs submitting within the same millisecond** could each create a `joinKey` before either writes storage, making two participants. This isn't realistic for a person; accepted.
 - **Deploy (Render):** the static site needs an SPA rewrite so `/i/*` serves `index.html`.
 - **`joinKey` as a future credential:** it will likely become the participant credential for Answer poll. It lives in localStorage, readable by same-origin JS (React escaping mitigates XSS).
+- **Invite code change without a page load:** `useJoinPoll` reads device memory once per mount, so its state would not reset if `/i/A` changed to `/i/B` inside the app. Nothing in the app navigates between invite links, so this cannot happen today.
+- **A tab opened before a join in another tab** keeps showing the form until its next submit, which then shows the stored nickname without a request.
 - **For `/design`** (dev does not edit the catalog): none so far.
 
 ### Handoff Notes
