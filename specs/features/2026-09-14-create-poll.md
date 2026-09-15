@@ -1,6 +1,6 @@
 # Feature: Create poll
 
-**Status:** In Dev
+**Status:** In QA
 **Created:** 2026-09-14
 **Last updated:** 2026-09-14
 
@@ -184,7 +184,7 @@ The landing page is the app's start page. Until Register and log in ships, the a
 
 **Plan status:** Approved
 **Author:** /dev
-**Last updated:** 2026-09-14
+**Last updated:** 2026-09-15
 
 ### Summary
 Set up the server and client, then build Create poll end to end. Server: `users`, `polls`, `poll_options` tables. A router-level `requireUser` stand-in loads the seeded test user. Two endpoints: `POST /api/polls` (transactional, idempotent through `clientRequestId`) and `GET /api/polls/:pollId` (scoped to the creator; 404 otherwise). Client: three routes (landing, create form, confirmation), built only from catalog components styled through token-mapped Tailwind classes. Form state and validation live in a hook plus pure utils. Drag reordering is a hand-written Pointer Events hook, so it works with mouse and touch without a dependency. The [Could] discard dialog is included and triggered by Cancel only.
@@ -217,7 +217,7 @@ Poll object: `{ id, question, details: string|null, answerType: 'single'|'multip
 
 | Method | Route | Auth | Validation | Success | Errors |
 |--------|-------|------|------------|---------|--------|
-| POST | /api/polls | `requireUser` (router) | body (strict): `question` trim 1–200, no line breaks; `details` optional string or null, trim, max 1000, empty → null; `answerType` enum; `options` 2–8 strings, each trim 1–100, no line breaks, unique by trim + lowercase; `clientRequestId` UUID | 201 `{ data: poll }` new. 200 `{ data: poll }` when this creator already used `clientRequestId` (replay returns the existing poll) | 400 "Invalid request", 401 "Authentication required", 413 "Request too large", 500 "Something went wrong" |
+| POST | /api/polls | `requireUser` (router) | body (strict): `question` trim 1–200, not blank (only whitespace or invisible characters), no line breaks or control characters; `details` optional string or null, trim, max 1000, empty → null, no control characters other than tabs and line breaks; `answerType` enum; `options` 2–8 strings, each trim 1–100, not blank, no line breaks or control characters, unique by trim + lowercase + NFC; `clientRequestId` UUID. Lone surrogates are rejected in every text field | 201 `{ data: poll }` new. 200 `{ data: poll }` when this creator already used `clientRequestId` (replay returns the existing poll) | 400 "Invalid request", 401 "Authentication required", 413 "Request too large", 500 "Something went wrong" |
 | GET | /api/polls/:pollId | `requireUser` (router) | params: `pollId` UUID; a malformed ID returns **404**, not 400 | 200 `{ data: poll }` | 404 "Poll not found" (doesn't exist, belongs to another user, or malformed ID), 401, 500 |
 
 Also: unknown `/api/*` routes → 404 envelope; malformed JSON → 400.
@@ -267,8 +267,9 @@ Files at the server root: `server/app.js` (exports the app for Supertest) and `s
 ### Edge Cases
 - **Repeated clicks:** a synchronous ref guard plus the locked button on the client, and the idempotency key plus unique constraint on the server.
 - **Lost response, then retry:** the same `clientRequestId` returns the existing poll with 200, so no duplicate is created.
-- **Spaces-only or leading/trailing spaces:** trimmed in client validation and in Zod before saving.
-- **Case or space duplicates:** trim + lowercase comparison on both client and server.
+- **Spaces-only or leading/trailing spaces:** trimmed in client validation and in Zod before saving. Text made only of whitespace and invisible characters (zero-width spaces, joiners, BOM) counts as empty on both sides.
+- **Case or space duplicates:** trim + lowercase + NFC comparison on both client and server.
+- **Control characters and lone surrogates:** rejected by Zod; the form removes them as typed or pasted, and single-line fields turn tabs into spaces.
 - **Pasting past the limit:** native `maxLength` cuts pasted text (UTF-16 counting, matched by Zod); the counter shows the maximum and the at-limit style.
 - **Max-length content at 360px:** `break-words` / `overflow-wrap:anywhere`, auto-grow textareas, no truncation, `whitespace-pre-wrap` for details.
 - **RTL and emoji:** `dir="auto"` on inputs and displayed user text; UTF-8 end to end.
@@ -354,6 +355,16 @@ All made by the captain on 2026-09-14 unless marked as a dev proposal in this pl
     - V9: Button colors ease with `--ease-standard`; only the press uses `--ease-emphasized`.
   - Deferred for later: design-system issues D1–D6.
   - Handoff to /qa waits for the captain's go-ahead.
+- **QA round 1 fixes (2026-09-15):**
+  - BUG-01: "blank" means only `\p{White_Space}` and `\p{Default_Ignorable_Code_Point}` characters, checked in Zod and in `pollValidation.js`. Invisible characters between visible ones (emoji ZWJ sequences, soft hyphens) are kept.
+  - BUG-02 (captain): the API rejects C0, DEL and C1 control characters and lone surrogates; details may keep tabs and line breaks. The form cleans them on input (`utils/cleanText.js` in `TextInput`), and single-line fields turn tabs into spaces, so no new UI copy is needed.
+  - BUG-03: duplicates compare with NFC normalization on both sides; stored text is not normalized.
+  - Not changed: details made only of invisible characters are saved as entered (the ruling covers question and options only).
+- **Minor bugs and test audit (captain, 2026-09-15):** BUG-04 to BUG-06 fixed before QA round 2.
+  - BUG-04: U+2028 and U+2029 count as line breaks. They are rejected in the question and options, and the form turns them into spaces.
+  - BUG-05: text limits use a `.length` refine (UTF-16 units) instead of Zod `.max`, which counts code points in Zod 4.
+  - BUG-06: auto-grow height is `scrollHeight` plus the border width (`offsetHeight - clientHeight`).
+  - Dev Test Audit: CSS-only class assertions removed (behavior checks kept); the `usePoll` unmount test replaced by a late-response test; a drag auto-scroll test added; tests delete `TEST_USER_USERNAME` when it was unset.
 
 ### Risks & Open Questions
 - **For `/design` (dev does not edit the catalog):** remove Move up/down from `OptionEditorRow` / `OptionListEditor` and the live-region announcement; NavBar shows no user yet; the Nunito and icon deferred decisions are resolved as "no package"; the brief and catalog are still `Draft`.
@@ -399,6 +410,13 @@ Filled in at hand off, for `/qa` (2026-09-15).
   4. Validation boundaries end to end: 200/1000/100 characters, 2 and 8 options, duplicates ignoring case and spaces, spaces-only input, line breaks, and unknown fields in the API body.
   5. Markup and script in every text field, on both the form and the confirmation screen.
 
+- **QA round 1 fixes (2026-09-15):**
+  - One `fix:` commit per bug, each removing that bug's expected-to-fail marker: `00f5a65` BUG-01, `5b50154` BUG-02, `c020b9b` BUG-03, `e57d146` BUG-04, `3c904b9` BUG-05, `5865c34` BUG-06.
+  - Dev Test Audit fixes: `b73ddde`, `dd59a3b`, `fd88765`, `abb25bd`. Also `a7e092b` writes a combining accent in tests as an escape.
+  - Jest: server 187 (the 61 QA API tests all run normally now), client 169. The new usePoll, TextInput height and auto-scroll tests were checked to fail when the code they guard is broken.
+  - E2E not run by dev: `DATABASE_URL_E2E` is still missing from `server/.env` (captain chose to skip it this round).
+  - Retest first: pasting control characters, tabs, U+2028 and lone surrogates into each field (removed or turned into spaces, with no error shown); invisible-only questions and options; NFC look-alike options; emoji at the length limits through the API; field heights at 360px.
+
 - **Known limitations:**
   - **No auth yet:** every request acts as the seeded test user, and guest blocking is deferred to Register and log in.
   - **Drag-only reordering:** there is no keyboard or screen-reader reordering, so WCAG 2.5.7 and 2.1.1 fail for reordering. The captain accepted this.
@@ -407,7 +425,7 @@ Filled in at hand off, for `/qa` (2026-09-15).
   - **Double GET in development:** React StrictMode makes the confirmation screen request the poll twice. Production does not.
   - **Slow failure on Windows:** with the API down, the save error appears after about 2.4s because Windows retries refused localhost connections.
   - **npm audit:** 2 moderate `uuid` advisories come in through Sequelize. They don't affect how this code uses it.
-  - **No Playwright yet:** `e2e/` and `server/tests/qa/` don't exist yet; /qa owns them.
+  - **Invisible-only details** are saved as entered; the captain's ruling covers the question and options only.
 
 ---
 
