@@ -8,7 +8,11 @@ const spacing = Object.fromEntries(
 );
 
 module.exports = {
-  content: ['./index.html', './src/**/*.{js,jsx}'],
+  // Relative to this file, so builds work from any working directory.
+  content: {
+    relative: true,
+    files: ['./index.html', './src/**/*.{js,jsx}'],
+  },
   theme: {
     colors: {
       transparent: 'transparent',
