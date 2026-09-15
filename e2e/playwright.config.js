@@ -69,7 +69,9 @@ module.exports = defineConfig({
       reuseExistingServer: false,
       timeout: 120 * 1000,
       stdout: 'ignore',
-      env: { VITE_API_URL: API_URL },
+      // helpers/env loads server/.env (NODE_ENV=development) into this process; without an explicit
+      // production NODE_ENV, Vite builds development React, which runs every effect twice.
+      env: { VITE_API_URL: API_URL, NODE_ENV: 'production' },
     },
   ],
 });
