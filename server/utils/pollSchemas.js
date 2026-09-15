@@ -7,6 +7,17 @@ const LINE_BREAK = /[\r\n\u2028\u2029]/;
 // Only whitespace and invisible characters (zero-width spaces, joiners, BOM): counts as empty.
 const BLANK = /^[\p{White_Space}\p{Default_Ignorable_Code_Point}]*$/u;
 
+// Invisible format characters, except variation selectors and tag characters, which belong to the
+// emoji before them (a red heart, a flag).
+const INVISIBLE_FORMAT = String.raw`(?:(?![\p{Variation_Selector}\u{E0000}-\u{E007F}])\p{Default_Ignorable_Code_Point})`;
+const EDGE_SPACE_OR_INVISIBLE = new RegExp(
+  String.raw`^(?:\p{White_Space}|${INVISIBLE_FORMAT})+|(?:\p{White_Space}|${INVISIBLE_FORMAT})+$`,
+  'gu',
+);
+
+// Leading and trailing spaces and invisible characters are removed before saving.
+const trimText = (text) => text.replace(EDGE_SPACE_OR_INVISIBLE, '');
+
 // Control characters and lone surrogates are rejected; details may keep tabs and line breaks.
 const CONTROL_OR_LONE_SURROGATE = /[\p{Cc}\p{Cs}]/u;
 const DETAILS_CONTROL_OR_LONE_SURROGATE = /(?![\t\n\r])[\p{Cc}\p{Cs}]/u;
@@ -18,7 +29,7 @@ const withinLength = (max) => (value) => value.length <= max;
 const singleLineText = (max) =>
   z
     .string()
-    .trim()
+    .overwrite(trimText)
     .min(1)
     .refine(withinLength(max), { message: 'Too long' })
     .refine((value) => !BLANK.test(value), { message: 'Must not be empty' })
@@ -32,13 +43,13 @@ const createPollBody = z.strictObject({
   question: singleLineText(POLL_LIMITS.QUESTION_MAX_LENGTH),
   details: z
     .string()
-    .trim()
+    .overwrite(trimText)
     .refine(withinLength(POLL_LIMITS.DETAILS_MAX_LENGTH), { message: 'Too long' })
     .refine((value) => !DETAILS_CONTROL_OR_LONE_SURROGATE.test(value), {
       message: 'Must not contain control characters',
     })
     .nullish()
-    .transform((value) => value || null),
+    .transform((value) => (value && !BLANK.test(value) ? value : null)),
   answerType: z.enum(ANSWER_TYPES),
   options: z
     .array(singleLineText(POLL_LIMITS.OPTION_MAX_LENGTH))

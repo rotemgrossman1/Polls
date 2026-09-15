@@ -57,6 +57,36 @@ describe('createPollBody', () => {
     expect(result.success).toBe(true);
   });
 
+  test('trims spaces and invisible characters at the edges but keeps emoji variation selectors and flag tags', () => {
+    const heart = 'I \u2764\uFE0F';
+    const flag = '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}';
+    const result = parse(
+      validBody({
+        question: '\u200B Lunch? \u2060',
+        details: ' \u200DContext\u200B ',
+        options: ['\uFEFFPizza\u00AD', heart, flag],
+      }),
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.data.question).toBe('Lunch?');
+    expect(result.data.details).toBe('Context');
+    expect(result.data.options).toEqual(['Pizza', heart, flag]);
+  });
+
+  test('keeps invisible characters inside the text', () => {
+    const result = parse(validBody({ question: 'Lun\u200Bch?' }));
+
+    expect(result.data.question).toBe('Lun\u200Bch?');
+  });
+
+  test('details of only spaces and invisible characters become null', () => {
+    const result = parse(validBody({ details: ' \u200B\u2060 ' }));
+
+    expect(result.success).toBe(true);
+    expect(result.data.details).toBeNull();
+  });
+
   test('accepts multiple choice', () => {
     expect(parse(validBody({ answerType: 'multiple' })).success).toBe(true);
   });

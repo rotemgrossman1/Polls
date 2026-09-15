@@ -493,7 +493,7 @@ describe('QA: Create poll API (adversarial)', () => {
       await expectRejectedAndNothingSaved({ question: '😀'.repeat(101) });
     });
 
-    test.failing('BUG-07: invisible characters around the question, details, and options are trimmed before saving', async () => {
+    test('BUG-07: invisible characters around the question, details, and options are trimmed before saving', async () => {
       const res = await request(app)
         .post('/api/polls')
         .send(
@@ -515,7 +515,7 @@ describe('QA: Create poll API (adversarial)', () => {
       expect(stored.options.map((o) => o.text)).toEqual(['Pizza', 'Sushi']);
     });
 
-    test.failing('BUG-07: details of only spaces and invisible characters are saved as no details', async () => {
+    test('BUG-07: details of only spaces and invisible characters are saved as no details', async () => {
       const res = await request(app).post('/api/polls').send(pollBody({ details: ` ${ch(0x200b, 0x2060)} ` }));
 
       expect(res.status).toBe(201);
