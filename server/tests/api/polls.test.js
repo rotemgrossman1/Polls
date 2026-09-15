@@ -28,7 +28,12 @@ describe('/api/polls', () => {
   });
 
   afterEach(() => {
-    process.env.TEST_USER_USERNAME = originalUsername;
+    // Assigning undefined to process.env stores the string "undefined", so delete instead.
+    if (originalUsername === undefined) {
+      delete process.env.TEST_USER_USERNAME;
+    } else {
+      process.env.TEST_USER_USERNAME = originalUsername;
+    }
   });
 
   afterAll(closeDatabase);
