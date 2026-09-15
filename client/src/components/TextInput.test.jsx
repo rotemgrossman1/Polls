@@ -151,6 +151,37 @@ describe('TextInput', () => {
     }
   });
 
+  test('fits its content again when its width changes, and only then', () => {
+    let notifyResize;
+    global.ResizeObserver = jest.fn((callback) => {
+      notifyResize = callback;
+      return { observe: jest.fn(), disconnect: jest.fn() };
+    });
+    // jsdom has no layout: the borders take 4px, and content plus padding grows as the field narrows.
+    const layout = { scrollHeight: 72, offsetHeight: 52, clientHeight: 48, clientWidth: 300 };
+    Object.keys(layout).forEach((name) => {
+      Object.defineProperty(HTMLTextAreaElement.prototype, name, { configurable: true, get: () => layout[name] });
+    });
+
+    try {
+      render(<Controlled id="question" label="Question" maxLength={200} initialValue="A question long enough to wrap" />);
+      const field = screen.getByLabelText('Question');
+      expect(field.style.height).toBe('76px');
+
+      layout.clientWidth = 200;
+      layout.scrollHeight = 120;
+      notifyResize();
+      expect(field.style.height).toBe('124px');
+
+      layout.scrollHeight = 200;
+      notifyResize();
+      expect(field.style.height).toBe('124px');
+    } finally {
+      Object.keys(layout).forEach((name) => delete HTMLTextAreaElement.prototype[name]);
+      delete global.ResizeObserver;
+    }
+  });
+
   test('read-only fields cannot be edited', async () => {
     render(<Controlled id="question" label="Question" maxLength={200} initialValue="Lunch?" readOnly />);
     const field = screen.getByLabelText('Question');

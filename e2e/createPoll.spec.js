@@ -876,7 +876,6 @@ test.describe('regression tests for open bugs', () => {
   });
 
   test('BUG-11: text fields still fit their content after the window becomes narrower (e.g. rotating a phone)', async ({ page }) => {
-    test.fail(); // BUG-11
     await page.goto('/polls/new');
     const { height } = page.viewportSize();
     await page.setViewportSize({ width: 1024, height });
