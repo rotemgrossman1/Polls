@@ -87,6 +87,13 @@ describe('createPollBody', () => {
     expect(result.data.details).toBeNull();
   });
 
+  test('flags that differ only in their tag characters are not duplicates', () => {
+    const england = '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}';
+    const wales = '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}';
+
+    expect(parse(validBody({ options: [england, wales] })).success).toBe(true);
+  });
+
   test('accepts multiple choice', () => {
     expect(parse(validBody({ answerType: 'multiple' })).success).toBe(true);
   });
@@ -149,6 +156,7 @@ describe('createPollBody', () => {
     ['option with a line separator', { options: ['Pizza', 'Su\u2028shi'] }],
     ['options differing only in case and spaces', { options: ['Yes', ' yes'] }],
     ['options equal after Unicode normalization', { options: ['Café', 'CAFE\u0301'] }],
+    ['options equal after ignoring invisible characters', { options: ['Yes', 'Y\u200BES'] }],
     ['non-string option', { options: ['Pizza', 42] }],
     ['options not an array', { options: 'Pizza,Sushi' }],
     ['invalid client request id', { clientRequestId: 'abc' }],

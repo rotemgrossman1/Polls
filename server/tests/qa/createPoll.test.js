@@ -522,7 +522,7 @@ describe('QA: Create poll API (adversarial)', () => {
       expect((await Poll.findByPk(res.body.data.id, { attributes: ['details'] })).details).toBeNull();
     });
 
-    test.failing.each([
+    test.each([
       ['a zero-width space', ['Yes', `Y${ch(0x200b)}es`]],
       ['a zero-width joiner and a different case', ['Yes', `Y${ch(0x200d)}ES`]],
     ])('BUG-08: options equal after ignoring invisible characters (%s inside) are rejected as duplicates', async (label, options) => {

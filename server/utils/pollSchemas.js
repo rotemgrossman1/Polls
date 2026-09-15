@@ -17,6 +17,7 @@ const EDGE_SPACE_OR_INVISIBLE = new RegExp(
 
 // Leading and trailing spaces and invisible characters are removed before saving.
 const trimText = (text) => text.replace(EDGE_SPACE_OR_INVISIBLE, '');
+const INVISIBLE_ANYWHERE = new RegExp(INVISIBLE_FORMAT, 'gu');
 
 // Control characters and lone surrogates are rejected; details may keep tabs and line breaks.
 const CONTROL_OR_LONE_SURROGATE = /[\p{Cc}\p{Cs}]/u;
@@ -37,7 +38,8 @@ const singleLineText = (max) =>
     .refine((value) => !CONTROL_OR_LONE_SURROGATE.test(value), { message: 'Must not contain control characters' });
 
 // Options match ignoring case and Unicode composition (precomposed "é" equals "e" + accent).
-const normalizeOption = (text) => text.toLowerCase().normalize('NFC');
+// Invisible characters are ignored too, so "Yes" and "Y" + zero-width space + "es" match.
+const normalizeOption = (text) => text.replace(INVISIBLE_ANYWHERE, '').toLowerCase().normalize('NFC');
 
 const createPollBody = z.strictObject({
   question: singleLineText(POLL_LIMITS.QUESTION_MAX_LENGTH),

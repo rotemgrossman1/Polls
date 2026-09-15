@@ -841,7 +841,6 @@ test.describe('regression tests for open bugs', () => {
   });
 
   test('BUG-08: options that match after ignoring invisible characters show the duplicate error and nothing is sent', async ({ page }) => {
-    test.fail(); // BUG-08
     const creates = countCreateRequests(page);
     await page.goto('/polls/new');
     await fillPoll(page, { questionText: unique('Invisible duplicates'), options: ['Yes', `Y${ch(0x200b)}es`] });

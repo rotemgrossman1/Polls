@@ -67,6 +67,22 @@ describe('validatePollForm', () => {
     expect(errors.options).toEqual({ k1: FIELD_ERROR.DUPLICATE, k2: FIELD_ERROR.DUPLICATE });
   });
 
+  test('options equal after ignoring invisible characters are duplicates', () => {
+    const errors = validatePollForm({
+      question: 'Coming?',
+      options: opts('Yes', 'Y\u200Bes', '\u2060YES\u200D ', 'No'),
+    });
+
+    expect(errors.options).toEqual({ k1: FIELD_ERROR.DUPLICATE, k2: FIELD_ERROR.DUPLICATE });
+  });
+
+  test('flags that differ only in their tag characters are not duplicates', () => {
+    const england = '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}';
+    const wales = '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}';
+
+    expect(hasErrors(validatePollForm({ question: 'Team?', options: opts(england, wales) }))).toBe(false);
+  });
+
   test('two empty options are both empty, not duplicates', () => {
     const errors = validatePollForm({ question: 'Lunch?', options: opts('', '') });
 
