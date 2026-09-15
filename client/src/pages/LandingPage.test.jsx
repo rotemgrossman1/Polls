@@ -27,7 +27,15 @@ describe('LandingPage', () => {
   test('the decorative bars are hidden from screen readers', () => {
     renderLanding();
 
-    expect(screen.getByTestId('hero-bars')).toHaveAttribute('aria-hidden', 'true');
+    const bars = screen.getByTestId('hero-bars');
+    expect(bars).toHaveAttribute('aria-hidden', 'true');
+    // Long, decreasing bars with a space-2 gap, as in the preview.
+    expect(bars).toHaveClass('w-2/3', 'gap-2');
+    expect(Array.from(bars.children).map((bar) => bar.className.match(/w-\S+/)[0])).toEqual([
+      'w-full',
+      'w-3/5',
+      'w-1/3',
+    ]);
   });
 
   test('Create poll opens the Create poll form', async () => {
