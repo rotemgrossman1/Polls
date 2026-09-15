@@ -1,7 +1,8 @@
 const { z } = require('zod');
 const { POLL_LIMITS, ANSWER_TYPES } = require('./pollRules');
 
-const LINE_BREAK = /[\r\n]/;
+// Line breaks, including the Unicode line and paragraph separators.
+const LINE_BREAK = /[\r\n\u2028\u2029]/;
 
 // Only whitespace and invisible characters (zero-width spaces, joiners, BOM): counts as empty.
 const BLANK = /^[\p{White_Space}\p{Default_Ignorable_Code_Point}]*$/u;

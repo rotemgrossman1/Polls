@@ -412,7 +412,7 @@ describe('QA: Create poll API (adversarial)', () => {
       await expectRejectedAndNothingSaved({ options: ['Café', 'Café'] });
     });
 
-    test.failing.each([
+    test.each([
       ['a Unicode line separator in an option', { options: ['Pizza', 'Su shi'] }],
       ['a paragraph separator in the question', { question: 'Lunch today?' }],
     ])('BUG-04: rejects %s in a single-line field and saves nothing', async (label, overrides) => {

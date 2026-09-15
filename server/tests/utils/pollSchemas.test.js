@@ -103,6 +103,8 @@ describe('createPollBody', () => {
     ['spaces-only option', { options: ['Pizza', '   '] }],
     ['option over 100 characters', { options: ['Pizza', 'o'.repeat(101)] }],
     ['option with a line break', { options: ['Pizza', 'Su\nshi'] }],
+    ['question with a paragraph separator', { question: 'Lunch\u2029today?' }],
+    ['option with a line separator', { options: ['Pizza', 'Su\u2028shi'] }],
     ['options differing only in case and spaces', { options: ['Yes', ' yes'] }],
     ['options equal after Unicode normalization', { options: ['Café', 'CAFÉ'] }],
     ['non-string option', { options: ['Pizza', 42] }],
