@@ -94,6 +94,26 @@ describe('PollCreatedPage', () => {
     expect(screen.getByText('Landing page')).toBeInTheDocument();
   });
 
+  test('the loading and load-error screens each have one h1 with their spec copy', async () => {
+    let rejectLoad;
+    getPoll.mockReturnValue(
+      new Promise((resolve, reject) => {
+        rejectLoad = reject;
+      }),
+    );
+    renderPage('/polls/unknown/created');
+
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole('heading', { level: 1, name: 'Loading poll…' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toContainElement(screen.getByRole('heading', { level: 1 }));
+
+    rejectLoad(Object.assign(new Error('Request failed'), { status: 404 }));
+
+    const heading = await screen.findByRole('heading', { level: 1, name: "We couldn't load this poll." });
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole('alert')).toContainElement(heading);
+  });
+
   test('Back to home opens the landing page', async () => {
     renderPage(afterCreate());
 

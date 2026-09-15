@@ -1,7 +1,8 @@
 import { ICON_PATHS, ICON_STROKE_WIDTH } from '../utils/iconPaths';
 
 // Form-level or page-level failure message (catalog: Alert, danger variant).
-export default function Alert({ children }) {
+// `as` sets the text element, e.g. "h1" when the message is the screen's heading.
+export default function Alert({ children, as: TextElement = 'p' }) {
   return (
     <div
       role="alert"
@@ -19,7 +20,7 @@ export default function Alert({ children }) {
       >
         <path d={ICON_PATHS.alert} />
       </svg>
-      <p className="min-w-0 font-medium text-text">{children}</p>
+      <TextElement className="min-w-0 text-base font-medium text-text">{children}</TextElement>
     </div>
   );
 }

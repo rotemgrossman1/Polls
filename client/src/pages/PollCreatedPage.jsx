@@ -28,12 +28,13 @@ export default function PollCreatedPage() {
 
   const goHome = () => navigate(ROUTES.home);
 
+  // Loading and load-error screens use their spec copy as the page heading.
   if (loading) {
     return (
       <PageLayout>
-        <p role="status" className="text-base text-text-muted">
-          {COPY.confirmation.loading}
-        </p>
+        <div role="status">
+          <h1 className="text-base font-regular text-text-muted">{COPY.confirmation.loading}</h1>
+        </div>
         <div
           aria-busy="true"
           className="flex flex-col gap-3 rounded-lg border border-text bg-surface p-5 shadow-md"
@@ -50,7 +51,7 @@ export default function PollCreatedPage() {
   if (error || !poll) {
     return (
       <PageLayout>
-        <Alert>{COPY.confirmation.loadError}</Alert>
+        <Alert as="h1">{COPY.confirmation.loadError}</Alert>
         <Button block onClick={goHome}>
           {COPY.confirmation.backHome}
         </Button>
