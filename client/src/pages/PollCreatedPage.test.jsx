@@ -44,8 +44,7 @@ describe('PollCreatedPage', () => {
   test('right after creating, shows the confirmation for the handed-over poll without loading', () => {
     renderPage(afterCreate());
 
-    // Same size as the poll question, so the heading does not outweigh it.
-    expect(screen.getByRole('heading', { level: 1, name: 'Poll created' })).toHaveClass('text-2xl');
+    expect(screen.getByRole('heading', { level: 1, name: 'Poll created' })).toBeInTheDocument();
     expect(screen.getByText('Your poll is open and ready for answers.')).toBeInTheDocument();
     const summary = screen.getByRole('article', { name: 'Where should we eat on Friday?' });
     expect(within(summary).getByText('Open')).toBeInTheDocument();

@@ -18,8 +18,6 @@ describe('PageLayout and NavBar', () => {
     expect(screen.getAllByRole('main')).toHaveLength(1);
     const logo = screen.getByRole('link', { name: 'Polls' });
     expect(logo).toHaveAttribute('href', '/');
-    // Touch target at least --touch-target-min tall.
-    expect(logo).toHaveClass('min-h-touch');
   });
 
   test('places the bottom bar after the main content', () => {

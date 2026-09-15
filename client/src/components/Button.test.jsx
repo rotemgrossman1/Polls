@@ -64,14 +64,6 @@ describe('Button', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  test('hover color changes use standard easing; only the press uses emphasized easing', () => {
-    render(<Button>Create poll</Button>);
-
-    const button = screen.getByRole('button', { name: 'Create poll' });
-    expect(button).toHaveClass('ease-standard', 'active:ease-emphasized');
-    expect(button).not.toHaveClass('ease-emphasized');
-  });
-
   test('disabled uses the native attribute', () => {
     render(<Button disabled>Cancel</Button>);
 

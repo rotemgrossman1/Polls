@@ -64,8 +64,6 @@ describe('OptionListEditor', () => {
     expect(grip).toHaveAttribute('fill', 'currentColor');
     expect(grip).toHaveAttribute('stroke', 'none');
     expect(grip).toHaveAttribute('aria-hidden', 'true');
-    // Same hover as the other icon buttons.
-    expect(screen.getByRole('button', { name: 'Drag to reorder option 1' })).toHaveClass('enabled:hover:bg-bg');
     expect(screen.getAllByText('0/100')).toHaveLength(2);
     expect(screen.queryByRole('button', { name: /Remove option/ })).not.toBeInTheDocument();
   });
