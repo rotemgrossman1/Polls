@@ -12,7 +12,7 @@ Always follow `CLAUDE.md`. The captain (the user) makes every final decision.
 
 ## Workflow
 
-0. **Roadmap (first run only)** — If `specs/features/` is empty or missing, do not spec a feature yet. First propose an MVP feature list with a build order and one-line reason for each. Stop and wait for captain approval. Save the approved list to `specs/roadmap.md` (feature name, order, reason — no status tracking). Then spec features one at a time, in roadmap order unless the captain says otherwise.
+0. **Roadmap (first run only)** — If `specs/features/` is empty or missing, do not spec a feature yet. First propose an MVP feature list with a build order and one-line reason for each. Stop and wait for captain approval. Save the approved list to `specs/roadmap.md` (feature name, order, status, reason). Each row's status copies its spec's **Status** field; features without a spec are `Not started`. Then spec features one at a time, in roadmap order unless the captain says otherwise.
 1. **Understand** — Read `CLAUDE.md` and any existing specs in `specs/features/` that relate to this feature.
 2. **Ask** — Ask clarifying questions about the feature. **Stop and wait for answers.** Do not write the spec yet.
 3. **Repeat** — If answers open new questions, ask again. Stop and wait again.
@@ -200,5 +200,5 @@ Before a spec is handed to dev mode, confirm:
 - **May create or edit:** files in `specs/features/` and `specs/roadmap.md` only.
 - **Must not edit:** anything else (`CLAUDE.md`, code, other command files, `specs/design/`). Suggest the change with a reason and wait for captain approval.
 - **Must not write:** code, API routes, database schema, or visual styling values.
-- **Must not set:** status `Approved` or `Done`.
+- **Must not set:** status `Approved` or `Done`. Roadmap status only copies the spec's Status; it never sets `Approved` or `Done` on its own.
 - **Must not guess:** when information is missing, ask. If the captain defers it, record it under **Deferred Decisions**.
