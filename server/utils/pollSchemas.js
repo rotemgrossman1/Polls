@@ -21,7 +21,8 @@ const singleLineText = (max) =>
     .refine((value) => !LINE_BREAK.test(value), { message: 'Must be a single line' })
     .refine((value) => !CONTROL_OR_LONE_SURROGATE.test(value), { message: 'Must not contain control characters' });
 
-const normalizeOption = (text) => text.toLowerCase();
+// Options match ignoring case and Unicode composition (precomposed "é" equals "e" + accent).
+const normalizeOption = (text) => text.toLowerCase().normalize('NFC');
 
 const createPollBody = z.strictObject({
   question: singleLineText(POLL_LIMITS.QUESTION_MAX_LENGTH),

@@ -408,7 +408,7 @@ describe('QA: Create poll API (adversarial)', () => {
       expect(await rowCounts()).toEqual({ polls: 0, options: 0 });
     });
 
-    test.failing('BUG-03: options equal after Unicode normalization (NFC) are rejected as duplicates', async () => {
+    test('BUG-03: options equal after Unicode normalization (NFC) are rejected as duplicates', async () => {
       await expectRejectedAndNothingSaved({ options: ['Café', 'Café'] });
     });
 

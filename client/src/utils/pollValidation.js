@@ -10,7 +10,8 @@ const BLANK = /^[\p{White_Space}\p{Default_Ignorable_Code_Point}]*$/u;
 
 const isBlank = (text) => BLANK.test(text);
 
-const normalizeOption = (text) => text.trim().toLowerCase();
+// Options match ignoring case, surrounding spaces and Unicode composition (as the API does).
+const normalizeOption = (text) => text.trim().toLowerCase().normalize('NFC');
 
 /**
  * Validates the Create poll form.

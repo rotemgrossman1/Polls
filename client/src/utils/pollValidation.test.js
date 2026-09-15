@@ -58,6 +58,15 @@ describe('validatePollForm', () => {
     expect(errors.options).toEqual({ k1: FIELD_ERROR.DUPLICATE, k3: FIELD_ERROR.DUPLICATE });
   });
 
+  test('options equal after Unicode normalization are duplicates', () => {
+    const errors = validatePollForm({
+      question: 'Coffee?',
+      options: opts('Café', 'Café', 'CAFÉ ', 'Tea'),
+    });
+
+    expect(errors.options).toEqual({ k1: FIELD_ERROR.DUPLICATE, k2: FIELD_ERROR.DUPLICATE });
+  });
+
   test('two empty options are both empty, not duplicates', () => {
     const errors = validatePollForm({ question: 'Lunch?', options: opts('', '') });
 

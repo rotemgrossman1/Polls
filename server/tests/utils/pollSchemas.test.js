@@ -104,6 +104,7 @@ describe('createPollBody', () => {
     ['option over 100 characters', { options: ['Pizza', 'o'.repeat(101)] }],
     ['option with a line break', { options: ['Pizza', 'Su\nshi'] }],
     ['options differing only in case and spaces', { options: ['Yes', ' yes'] }],
+    ['options equal after Unicode normalization', { options: ['Café', 'CAFÉ'] }],
     ['non-string option', { options: ['Pizza', 42] }],
     ['options not an array', { options: 'Pizza,Sushi' }],
     ['invalid client request id', { clientRequestId: 'abc' }],
