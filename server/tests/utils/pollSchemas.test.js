@@ -106,7 +106,7 @@ describe('createPollBody', () => {
     ['question with a paragraph separator', { question: 'Lunch\u2029today?' }],
     ['option with a line separator', { options: ['Pizza', 'Su\u2028shi'] }],
     ['options differing only in case and spaces', { options: ['Yes', ' yes'] }],
-    ['options equal after Unicode normalization', { options: ['Café', 'CAFÉ'] }],
+    ['options equal after Unicode normalization', { options: ['Café', 'CAFE\u0301'] }],
     ['non-string option', { options: ['Pizza', 42] }],
     ['options not an array', { options: 'Pizza,Sushi' }],
     ['invalid client request id', { clientRequestId: 'abc' }],

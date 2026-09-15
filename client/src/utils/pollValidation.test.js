@@ -61,7 +61,7 @@ describe('validatePollForm', () => {
   test('options equal after Unicode normalization are duplicates', () => {
     const errors = validatePollForm({
       question: 'Coffee?',
-      options: opts('Café', 'Café', 'CAFÉ ', 'Tea'),
+      options: opts('Café', 'Cafe\u0301', 'CAFE\u0301 ', 'Tea'),
     });
 
     expect(errors.options).toEqual({ k1: FIELD_ERROR.DUPLICATE, k2: FIELD_ERROR.DUPLICATE });
