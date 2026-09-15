@@ -72,6 +72,26 @@ describe('TextInput', () => {
     expect(field).toHaveValue('Line one\nLine two');
   });
 
+  test('single-line fields remove control characters and lone surrogates and turn tabs into spaces', () => {
+    const onValue = jest.fn();
+    render(<Controlled id="option" label="Option 1" maxLength={100} onValue={onValue} />);
+    const field = screen.getByLabelText('Option 1');
+
+    fireEvent.change(field, { target: { value: 'Su\u0000shi\u0007\tbar \uD800' } });
+
+    expect(field).toHaveValue('Sushi bar ');
+    expect(onValue).toHaveBeenLastCalledWith('Sushi bar ');
+  });
+
+  test('multiline fields remove control characters and lone surrogates but keep tabs and line breaks', () => {
+    render(<Controlled id="details" label="Details (optional)" maxLength={1000} variant="multiline" />);
+    const field = screen.getByLabelText('Details (optional)');
+
+    fireEvent.change(field, { target: { value: 'Menu:\n\tPizza\u001B\u0000\uDC00' } });
+
+    expect(field).toHaveValue('Menu:\n\tPizza');
+  });
+
   test('read-only fields cannot be edited', async () => {
     render(<Controlled id="question" label="Question" maxLength={200} initialValue="Lunch?" readOnly />);
     const field = screen.getByLabelText('Question');

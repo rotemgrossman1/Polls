@@ -389,7 +389,7 @@ describe('QA: Create poll API (adversarial)', () => {
       await expectRejectedAndNothingSaved(overrides);
     });
 
-    test.failing.each([
+    test.each([
       ['a null byte in the question', { question: 'Lunch ?' }],
       ['a null byte in an option', { options: ['Pizza', 'Su shi'] }],
       ['a null byte in the details', { details: 'Context here' }],
@@ -400,7 +400,7 @@ describe('QA: Create poll API (adversarial)', () => {
       await expectRejectedAndNothingSaved(overrides);
     });
 
-    test.failing('BUG-02: a poll whose last option has a null byte leaves no poll or options behind', async () => {
+    test('BUG-02: a poll whose last option has a null byte leaves no poll or options behind', async () => {
       await request(app)
         .post('/api/polls')
         .send(pollBody({ options: ['Pizza', 'Sushi', 'Tacos', 'Bad option'] }));

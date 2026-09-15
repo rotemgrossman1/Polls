@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import { COPY } from '../utils/uiCopy';
 import { ICON_PATHS, ICON_STROKE_WIDTH } from '../utils/iconPaths';
+import { cleanText } from '../utils/cleanText';
 import { toSingleLine } from '../utils/singleLine';
 
 const FIELD =
@@ -11,7 +12,8 @@ const FIELD =
 /**
  * Labeled text field with error message and character counter (catalog: TextInput).
  * Always a textarea so long text wraps and grows instead of scrolling out of view.
- * - `variant`: 'auto-grow' (single line, line breaks become spaces) or 'multiline'.
+ * - `variant`: 'auto-grow' (single line, line breaks and tabs become spaces) or 'multiline'.
+ *   Both remove control characters and lone surrogates, which the API rejects.
  * - `large`: question styling.
  * - `label`: omit when the caller renders its own <label htmlFor={id}> (option rows).
  */
@@ -53,8 +55,8 @@ export default function TextInput({
   }
 
   function handleChange(event) {
-    const next = multiline ? event.target.value : toSingleLine(event.target.value);
-    onChange(next);
+    const cleaned = cleanText(event.target.value);
+    onChange(multiline ? cleaned : toSingleLine(cleaned));
   }
 
   function handleKeyDown(event) {

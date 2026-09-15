@@ -41,6 +41,13 @@ describe('createPollBody', () => {
     expect(result.data.details).toBeNull();
   });
 
+  test('details keep tabs and line breaks inside the text', () => {
+    const result = parse(validBody({ details: 'Menu:\n\tPizza\r\n\tSushi' }));
+
+    expect(result.success).toBe(true);
+    expect(result.data.details).toBe('Menu:\n\tPizza\r\n\tSushi');
+  });
+
   test('accepts multiple choice', () => {
     expect(parse(validBody({ answerType: 'multiple' })).success).toBe(true);
   });
@@ -80,7 +87,15 @@ describe('createPollBody', () => {
     ['question over 200 characters', { question: 'q'.repeat(201) }],
     ['question with a line break', { question: 'Where\nshould we eat?' }],
     ['missing question', { question: undefined }],
+    ['question with a null byte', { question: 'Lunch\u0000?' }],
+    ['question with a tab inside', { question: 'Lunch\tnow?' }],
+    ['option with an escape character', { options: ['Pizza', 'Sushi\u001B[31m'] }],
+    ['option with a C1 control character', { options: ['Pizza', 'Su\u009Bshi'] }],
+    ['option with a lone low surrogate', { options: ['Pizza', 'Su\uDC00shi'] }],
     ['details over 1000 characters', { details: 'd'.repeat(1001) }],
+    ['details with a null byte', { details: 'Context\u0000here' }],
+    ['details with a bell character', { details: 'Context\u0007' }],
+    ['details with a lone high surrogate', { details: 'Context \uD800' }],
     ['unknown answer type', { answerType: 'ranked' }],
     ['one option', { options: ['Pizza'] }],
     ['nine options', { options: Array.from({ length: 9 }, (_, i) => `Option ${i}`) }],
