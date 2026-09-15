@@ -10,7 +10,7 @@ export default function NavBar() {
       <nav className="mx-auto flex w-full max-w-container items-center gap-3">
         <Link
           to={ROUTES.home}
-          className="inline-flex items-center gap-3 rounded-md text-xl font-bold leading-tight text-text focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="inline-flex min-h-touch items-center gap-3 rounded-md text-xl font-bold leading-tight text-text focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           <span
             aria-hidden="true"
