@@ -2,7 +2,8 @@ import { ICON_PATHS, ICON_STROKE_WIDTH } from '../utils/iconPaths';
 
 const BASE =
   'inline-flex items-center justify-center gap-2 rounded-full font-sans font-bold leading-tight ' +
-  'transition duration-fast ease-emphasized motion-reduce:transition-none ' +
+  // Colors ease with --ease-standard; only the press uses --ease-emphasized (brief: Motion).
+  'transition duration-fast ease-standard active:ease-emphasized motion-reduce:transition-none ' +
   'focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus';
 
 const SIZES = {
