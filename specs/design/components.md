@@ -1,12 +1,12 @@
 # Component Catalog
 
 **Created:** 2026-09-14
-**Last updated:** 2026-09-14
+**Last updated:** 2026-09-15
 
 Direction: Option B — Playful (`specs/design/direction-brief.md`). Token names only — values live in `client/src/styles/tokens.css`.
-Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews/component-CreatePoll.html`.
+Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews/component-CreatePoll.html`, `specs/design/previews/component-ShareAndJoinPoll.html`.
 
-**Scope:** components needed by Create poll. Remaining starter components (`VoteOption`, `ResultChart`, `PollCard`, `ShareInviteModal`, `EmptyState`, `Toast`) are added by the first feature that uses each one.
+**Scope:** components needed by Create poll and Share and join poll. Remaining starter components (`VoteOption`, `ResultChart`, `PollCard`, `Toast`) are added by the first feature that uses each one. How components combine on each screen is under **Screens**.
 
 ---
 
@@ -20,7 +20,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Variants:** primary, secondary, secondary-dashed (additive actions), ghost, danger. Sizes: default, sm. Modifier: block (full width).
 
-**States:** default, hover, focus-visible, active (press), disabled, loading.
+**States:** default, hover, focus-visible, active (press), disabled, loading, success.
 
 **Tokens:**
 | Part | State | Token |
@@ -34,12 +34,13 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 | Danger | default / hover | bg `--color-danger`, text `--color-text-inverse`, `--shadow-md`; hover adds 2px `--color-text` border |
 | Any | disabled | bg `--color-surface`, text `--color-text-muted`, border `--color-border-strong`, no shadow |
 | Primary | loading | bg `--color-action-hover`, no shadow, spinner `currentColor` |
+| Primary | success | bg `--color-success` (hover unchanged), text `--color-text-inverse`, `--shadow-md`, check icon |
 | Any | focus-visible | 3px outline `--color-focus` |
 | Any | active | translate down 2px, shadow removed, `--duration-fast` `--ease-emphasized` |
 
-**Behavior:** Loading shows the spinner before the label and blocks further presses. The label is the spec's copy for that state (Create poll uses "Creating…"). One primary per screen. In the mobile bottom bar, buttons are block.
+**Behavior:** Loading shows the spinner before the label and blocks further presses. The label is the spec's copy for that state (Create poll uses "Creating…"). One primary per screen. In the mobile bottom bar, buttons are block. Success shows a check icon and the spec's confirmation label for a short time (Share and join poll: "Copied" for 2 seconds); the button stays usable.
 
-**Accessibility:** Native `<button>`. Loading uses `aria-disabled="true"` so focus is not lost; the spinner is `aria-hidden`. A disabled button with an explanation uses `aria-disabled="true"` plus `aria-describedby` pointing to the hint, so it stays focusable and the hint is announced.
+**Accessibility:** Native `<button>`. A success label change is announced through a separate polite live region with the spec's announcement copy, not by the label change alone. Loading uses `aria-disabled="true"` so focus is not lost; the spinner is `aria-hidden`. A disabled button with an explanation uses `aria-disabled="true"` plus `aria-describedby` pointing to the hint, so it stays focusable and the hint is announced.
 
 **Do / Don't:**
 - Do use danger only for confirming destructive actions.
@@ -52,9 +53,9 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Labeled text field with optional error message and character counter.
-**Used in:** Create poll (question, details, options). Later: nickname, login.
+**Used in:** Create poll (question, details, options). Share and join poll (nickname, through `NicknameField`). Later: login.
 
-**Anatomy:** Label, field, helper row (error left, counter right), optional help text.
+**Anatomy:** Label, optional help text (between the label and the field), field, helper row (error left, counter right).
 
 **Variants:** single-line; auto-grow (textarea that grows with content, no line breaks, soft wrap); multiline (textarea, minimum two rows' height, line breaks allowed); large (question).
 
@@ -76,7 +77,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Behavior:** Auto-grow fields never hide text. The field stops accepting input at the limit; pasted text is cut at the limit. The error appears after a submit attempt and clears as soon as the field is valid.
 
-**Accessibility:** Visible label always; a placeholder is never the label (option rows use the number badge as the visible label — see `OptionEditorRow`). Invalid: `aria-invalid="true"`. `aria-describedby` lists the error first, then the counter. The counter is not a live region, so it is not announced on every keystroke.
+**Accessibility:** Visible label always; a placeholder is never the label (option rows use the number badge as the visible label — see `OptionEditorRow`). Invalid: `aria-invalid="true"`. `aria-describedby` lists the error first, then the help text, then the counter. The counter is not a live region, so it is not announced on every keystroke.
 
 **Do / Don't:**
 - Do keep the counter visible at all times.
@@ -118,11 +119,11 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Top bar with the logo (links to the landing page) and the current user.
-**Used in:** All screens for registered users.
+**Used in:** default: screens for registered users. minimal: invite page, joined screen, link doesn't work page.
 
-**Anatomy:** Logo mark, "Polls" wordmark, username, avatar initial.
+**Anatomy:** Logo mark, "Polls" wordmark, username and avatar initial (default only).
 
-**Variants:** Not applicable.
+**Variants:** default (logo + current user), minimal (logo only).
 
 **States:** default, focus-visible (logo link).
 
@@ -136,7 +137,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 | Avatar | all | bg `--color-text`, text `--color-text-inverse`, `--radius-full`, size `--space-9`, `--weight-bold` |
 | Logo link | focus-visible | 3px outline `--color-focus` |
 
-**Behavior:** Until Register and log in ships, shows the fixed test user. Under `prefers-reduced-motion` the tilt stays (it is static, not motion).
+**Behavior:** Until Register and log in ships, shows the fixed test user. Minimal is used on invite-link screens, so every visitor (guest, registered user, or the poll's creator) sees the same page. Under `prefers-reduced-motion` the tilt stays (it is static, not motion).
 
 **Accessibility:** `<header>` containing `<nav>`. Logo is a link with accessible name "Polls". Avatar is `aria-hidden`.
 
@@ -284,9 +285,9 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Inline message for a form-level or page-level failure.
-**Used in:** Create poll (save failure, confirmation load error). Later: login failure.
+**Used in:** Create poll (save failure, confirmation load error). Share and join poll (join failure, poll load error). Later: login failure.
 
-**Anatomy:** Container, icon, text. Optional action placed after the alert.
+**Anatomy:** Container, icon, and either text or title + body. Optional action placed after the alert.
 
 **Variants:** danger.
 
@@ -298,8 +299,10 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 | Container | danger | bg `--color-danger-subtle`, 2px border `--color-danger`, `--radius-md`, padding `--space-3` / `--space-4`, gap `--space-3` |
 | Icon | danger | `--color-danger` |
 | Text | danger | `--color-text`, `--weight-medium` |
+| Title | danger | `--text-base`, `--weight-bold`, `--color-text` |
+| Body | danger | `--text-base`, `--weight-regular`, `--color-text` |
 
-**Behavior:** Save failure: directly above the bottom bar; removed on the next submit. Load error: top of the content area, followed by the spec's action.
+**Behavior:** Save or join failure: directly above the bottom bar; removed on the next submit. Load error: top of the content area, followed by the spec's action. Title + body is used when the spec gives the error a heading and a body. When the alert is the only content on the screen, its title is the page `h1`.
 
 **Accessibility:** `role="alert"`; icon `aria-hidden`. Focus is not moved; the alert is announced.
 
@@ -313,7 +316,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Shows a poll's status.
-**Used in:** Confirmation screen. Later: My polls, results.
+**Used in:** Confirmation screen, invite page, joined screen. Later: My polls, results.
 
 **Anatomy:** Pill, leading marker (dot for Open, lock icon for Closed), label.
 
@@ -342,11 +345,11 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Read-only view of a poll's content.
-**Used in:** Confirmation screen. Later: Share invite link.
+**Used in:** Confirmation screen (default). Invite page and joined screen (invite + bubble).
 
-**Anatomy:** Card, meta row (`StatusBadge` + answer-type tag with icon), question, optional details, numbered option list.
+**Anatomy:** Card, meta row, question, optional details, numbered option list (default only), bubble tail (bubble only).
 
-**Variants:** Not applicable.
+**Variants:** default (meta row: `StatusBadge` + answer-type tag with icon; numbered option list), invite (meta row: `StatusBadge` + "{n} options" with a list icon; no answer type, no option list). Modifier: bubble.
 
 **States:** Not applicable (loading uses `Skeleton`; failure uses `Alert`).
 
@@ -360,14 +363,17 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 | Option list | all | 2px dividers `--color-border` |
 | Option row | all | padding y `--space-3`, `--weight-medium`, gap `--space-3` |
 | Number badge | all | as `OptionEditorRow` |
+| Card | bubble | top margin `--space-2` (room for the tail) |
+| Tail | bubble | size `--space-5`, fill same as the card, 2px `--color-text` outline on its two outer edges, left offset `--space-8`, rises `--space-3` above the card |
 
-**Behavior:** All text wraps in full, no truncation. Line breaks in details are kept. Options appear in saved order. Answer-type icon: dot-in-circle for single, stacked boxes for multiple.
+**Behavior:** All text wraps in full, no truncation. Line breaks in details are kept. Options appear in saved order. Answer-type icon: dot-in-circle for single, stacked boxes for multiple. The invite variant never shows answer options, answer counts, results, nicknames, the creator, or the poll ID. Bubble: the tail points up at the screen heading directly above the card (`StickerHeading` or the joined heading). The tail is a shape (a square turned 45°), not a tilt, so `--rotate-tilt-*` does not apply.
 
 **Accessibility:** `<article>` labelled by the question heading (`h2`). Options in an `<ol>`; number badges `aria-hidden`.
 
 **Do / Don't:**
 - Do keep it visually distinct from editable tiles.
 - Don't give option rows tiles or shadows — read-only content must not look tappable.
+- Don't use the bubble without a heading directly above the card.
 
 ---
 
@@ -375,7 +381,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Playful success moment above a success heading.
-**Used in:** Confirmation screen.
+**Used in:** Confirmation screen, joined screen.
 
 **Anatomy:** Circle, check icon.
 
@@ -403,18 +409,19 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Placeholder matching the final layout while data loads.
-**Used in:** Confirmation screen on reload.
+**Used in:** Confirmation screen on reload. Invite page and joined screen while the poll loads.
 
-**Anatomy:** Line, title, and row shapes inside the real container.
+**Anatomy:** Line, title, row, and sticker shapes inside the real container.
 
-**Variants:** line, title, row.
+**Variants:** line, title, row, sticker.
 
 **States:** Not applicable.
 
 **Tokens:**
 | Part | State | Token |
 |------|-------|-------|
-| Shape | all | bg `--chart-track`; `--radius-full` (line, title) / `--radius-md` (row); heights `--space-4` / `--space-7` / `--space-10` |
+| Shape | all | bg `--chart-track`; `--radius-full` (line, title, sticker) / `--radius-md` (row); heights `--space-4` / `--space-7` / `--space-10` / `--space-10` |
+| Sticker | all | `--rotate-tilt-sm` (matches `StickerHeading`) |
 | Pulse | all | `--ease-standard` |
 
 **Behavior:** Gentle opacity pulse. No animation under `prefers-reduced-motion`.
@@ -427,13 +434,13 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 ---
 
-### ConfirmDialog
+### Sheet
 
 **Status:** Draft
-**Purpose:** Confirms a destructive action.
-**Used in:** Create poll discard [Could].
+**Purpose:** Modal container: a bottom sheet on mobile, a centered dialog from `md`.
+**Used in:** `ConfirmDialog`, `ShareInviteModal`.
 
-**Anatomy:** Scrim, sheet (handle on mobile), title, body, danger action, safe action.
+**Anatomy:** Scrim, sheet, handle (mobile only), content.
 
 **Variants:** Not applicable.
 
@@ -444,20 +451,221 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 |------|-------|-------|
 | Scrim | open | `--color-scrim`, `--z-modal` |
 | Sheet | mobile | bg `--color-surface`, top corners `--radius-lg`, `--shadow-lg`, padding `--space-3` / `--space-5` / `--space-6`, gap `--space-4` |
-| Dialog | md and up | all corners `--radius-lg`, 2px border `--color-text`, centered, max width 28rem (layout value, set by dev in the Tailwind config) |
+| Dialog | md and up | all corners `--radius-lg`, 2px border `--color-text`, top padding `--space-6`, centered, max width 28rem (layout value, set by dev in the Tailwind config) |
 | Handle | mobile | `--color-border-strong`, `--space-10` × `--space-1`, `--radius-full` |
-| Title | all | `--text-xl`, `--weight-bold` |
 | Enter | open | `--duration-base` `--ease-standard`; none under `prefers-reduced-motion` |
+
+**Behavior:** Opens over the current screen; the page behind does not scroll. Escape and a scrim tap close it the way the component using it defines (the safe action for `ConfirmDialog`, Done for `ShareInviteModal`). Content taller than the viewport scrolls inside the sheet.
+
+**Accessibility:** `aria-modal="true"`; the role and label come from the component using it. Focus is trapped inside; on close, focus returns to the control that opened it. The handle is `aria-hidden` and is not a drag control.
+
+**Do / Don't:**
+- Do build every modal on `Sheet`.
+- Don't open one sheet on top of another.
+
+---
+
+### ConfirmDialog
+
+**Status:** Draft
+**Purpose:** Confirms a destructive action.
+**Used in:** Create poll discard [Could].
+
+**Anatomy:** `Sheet`, title, body, danger action, safe action.
+
+**Variants:** Not applicable.
+
+**States:** open, closed.
+
+**Tokens:**
+| Part | State | Token |
+|------|-------|-------|
+| Container | all | as `Sheet` |
+| Title | all | `--text-xl`, `--weight-bold` |
 
 **Behavior:** Mobile: actions stacked, danger on top, safe action at the bottom near the thumb. From `md`: actions in a row, safe action left, danger right. Escape and a scrim tap act as the safe action.
 
-**Accessibility:** `role="alertdialog"`, `aria-modal="true"`, labelled by the title, described by the body. Initial focus on the safe action; focus trapped inside; on close, focus returns to the control that opened it.
+**Accessibility:** `role="alertdialog"`, labelled by the title, described by the body. Initial focus on the safe action. Focus trap and focus return as `Sheet`.
 
 **Do / Don't:**
-- Do reuse the bottom-sheet / dialog pattern.
+- Do build it on `Sheet`.
 - Don't put initial focus on the destructive action.
+
+---
+
+### ShareInviteModal
+
+**Status:** Draft
+**Purpose:** Share sheet that shows a poll's invite link and lets the creator copy or send it.
+**Used in:** Confirmation screen (Share and join poll). Later: My polls.
+
+**Anatomy:** `Sheet`; header (title `h2`, Close icon button); body text; link box (link icon, link text); copy error (under the link box, when shown); actions (Copy, Share link, Done); visually hidden live region.
+
+**Variants:** with Share link (device supports sharing), without Share link.
+
+**States:** default, copied, copy blocked.
+
+**Tokens:**
+| Part | State | Token |
+|------|-------|-------|
+| Title | all | `--text-xl`, `--weight-bold` |
+| Body | all | `--text-base`, `--color-text-muted` |
+| Close | all | icon button as `OptionEditorRow` |
+| Link box | default | bg `--color-bg`, 2px dashed border `--color-border-strong`, `--radius-md`, padding `--space-3` / `--space-4`, gap `--space-3` |
+| Link box | copy blocked | border `--color-danger`, bg `--color-danger-subtle` |
+| Link icon | all | `--color-text-muted` |
+| Link text | all | `--text-base`, `--weight-medium`, `--color-text` |
+| Copy error | copy blocked | as `TextInput` error message |
+| Actions | all | gap `--space-2` |
+| Copy | default / copied | `Button` primary block with copy icon / `Button` success state |
+| Share link | all | `Button` secondary block with share icon |
+| Done | all | `Button` ghost block |
+
+**Behavior:**
+- Actions are stacked and full width at every size, in this order: Copy, Share link, Done (Done nearest the thumb on mobile).
+- The link is shown in full and wraps; it is never cut off. Tapping the link text selects all of it.
+- Copy copies the link and shows "Copied" for 2 seconds, then "Copy". Each tap copies again and restarts the 2 seconds.
+- Copy blocked: the error appears under the link box and the link text is selected. Copy keeps its default label.
+- Share link is shown only when the device supports sharing. Canceling the device share options shows no error; the sheet stays open.
+- Done, Close, Escape and a scrim tap all close the sheet.
+
+**Accessibility:** `role="dialog"`, labelled by the title, described by the body. Initial focus on Copy. The link box has the accessible name "Invite link". After copying, a polite live region announces "Link copied". The copy error uses `role="alert"`. Close is an icon button labelled "Close", at least `--touch-target-min`.
+
+**Do / Don't:**
+- Do keep Copy as the primary on every device; Share link is the extra.
+- Don't confirm the copy with a `Toast`.
+- Don't shorten the link with an ellipsis.
+
+---
+
+### StickerHeading
+
+**Status:** Draft
+**Purpose:** Tilted pill heading that marks a playful screen moment.
+**Used in:** Invite page ("You're invited").
+
+**Anatomy:** Pill, leading icon, text.
+
+**Variants:** Not applicable.
+
+**States:** Not applicable.
+
+**Tokens:**
+| Part | State | Token |
+|------|-------|-------|
+| Pill | all | bg `--color-surface`, 2px border `--color-text`, `--radius-full`, `--shadow-sm`, padding `--space-2` / `--space-4`, gap `--space-2`, `--rotate-tilt-sm` |
+| Text | all | `--text-lg`, `--weight-bold`, `--leading-tight`, `--color-text` |
+| Icon | all | `--color-action` |
+
+**Behavior:** Sizes to its text and sits at the start of the column. Text wraps if it does not fit. The tilt is static, so it stays under `prefers-reduced-motion`.
+
+**Accessibility:** Rendered as the page `h1`. Icon `aria-hidden`.
+
+**Do / Don't:**
+- Do use it at most once per screen, at the top.
+- Don't use it for status or tags; use `StatusBadge`.
+- Don't make it interactive.
+
+---
+
+### NicknameField
+
+**Status:** Draft
+**Purpose:** Nickname entry for joining a poll.
+**Used in:** Invite page.
+
+**Anatomy:** Emphasis card containing a large single-line `TextInput`: label, help text, field, helper row (error, counter).
+
+**Variants:** Not applicable.
+
+**States:** empty, filled, at limit, error (empty), error (taken), locked (joining).
+
+**Tokens:**
+| Part | State | Token |
+|------|-------|-------|
+| Card | all | bg `--color-action-subtle`, 2px border `--color-text`, `--radius-lg`, `--shadow-md`, padding `--space-5`, gap `--space-2` |
+| Label, help, field, error, counter | all | as `TextInput` (large) |
+| Field | locked | as `TextInput` read-only |
+
+**Behavior:**
+- Limit 20: typing stops at the limit, pasted text is cut at 20, and the counter reads {count}/20.
+- Line breaks, tabs, control and direction-override characters are removed as typed or pasted. Emoji and right-to-left text are allowed.
+- Enter submits the invite page form, same as "Join poll".
+- Errors appear after a join attempt, left of the counter. The empty error clears as soon as the field is valid; the taken error clears as soon as the nickname changes.
+- Never prefilled.
+
+**Accessibility:** `autocomplete="nickname"`, `dir="auto"`, `enterkeyhint="go"`. Invalid: `aria-invalid="true"`. `aria-describedby` lists the error, then the help text, then the counter. On an error, focus moves to the field.
+
+**Do / Don't:**
+- Do keep the help text visible at all times; it tells people the creator will see the name.
+- Don't add an avatar or initial preview to the card.
+
+---
+
+### EmptyState
+
+**Status:** Draft
+**Purpose:** Whole-content message when there is nothing to show.
+**Used in:** Link doesn't work page. Later: My polls (no polls), results (no answers).
+
+**Anatomy:** Icon circle, heading, body, optional action.
+
+**Variants:** without action, with action.
+
+**States:** Not applicable.
+
+**Tokens:**
+| Part | State | Token |
+|------|-------|-------|
+| Container | all | centered text, padding y `--space-10`, gap `--space-4` |
+| Icon circle | all | size `--space-12` × 2, bg `--color-action-subtle`, 2px dashed border `--color-action`, `--radius-full`, `--rotate-tilt-md` |
+| Icon | all | `--color-action`, size `--space-10` |
+| Heading | all | `--text-2xl`, `--weight-bold`, `--leading-tight` |
+| Body | all | `--text-base`, `--color-text-muted` |
+| Action | with action | `Button` primary |
+
+**Behavior:** Heading and body are the spec's copy and wrap. The icon matches the situation (broken link for the link doesn't work page). The tilt is static.
+
+**Accessibility:** The heading is the page `h1` when the empty state fills the screen, otherwise an `h2`. Icon circle `aria-hidden`.
+
+**Do / Don't:**
+- Do follow the brief's empty-state pattern (large tilted icon in a dashed circle).
+- Don't use it for failures that can be retried; use `Alert` with the spec's action.
+
+---
+
+## Screens
+
+How components combine on each screen. Copy comes from the specs.
+
+### Confirmation screen (Share and join poll changes)
+- Success: `SuccessMark`, "Poll created" heading, intro, `PollSummary` (default), then "Back to home" as a ghost `Button` (sm, home icon) below the summary.
+- Bottom bar: "Create another poll" (secondary) and "Share poll" (primary, share icon). Mobile: Share poll at the bottom. From `md`: Share poll on the right.
+- "Share poll" opens `ShareInviteModal`; closing it returns focus to "Share poll".
+- Loading and load error are unchanged from Create poll; "Share poll" is not shown.
+
+### Invite page
+- `NavBar` minimal.
+- Loading: "Loading poll…" (`role="status"`) and a `Skeleton` shaped like the page: sticker, poll card (line, two titles), nickname card (line, row).
+- Success: `StickerHeading` "You're invited" (`h1`), `PollSummary` invite + bubble, `NicknameField`.
+- The whole page is one form. Bottom bar: "Join poll" (primary). Joining: `Button` loading with "Joining…" and the field locked.
+- Join failed: `Alert` directly above the bottom bar.
+- Link doesn't work and load failed: see below.
+
+### Joined screen
+- `NavBar` minimal. `SuccessMark`, then "You're in, {nickname}" (`h1`; the nickname is isolated with `<bdi>` and wraps in full), then `PollSummary` invite + bubble.
+- No bottom bar and no action in this feature.
+- Loading, link doesn't work and load failed: same as the invite page.
+
+### Link doesn't work page
+- `NavBar` minimal and `EmptyState` without action: broken-link icon, "This link doesn't work" (`h1`), body.
+- Identical for every non-working link. No poll content, no form.
+
+### Load failed (invite page and joined screen)
+- `NavBar` minimal. `Alert` with title "We couldn't load this poll." (`h1`) and body, then "Try again" (`Button` primary, block on mobile).
 
 ---
 
 ## Changelog
 - 2026-09-14 — Catalog created with the components Create poll needs: Button, TextInput, PageLayout, NavBar, HeroCard, AnswerTypeSelector, OptionListEditor, OptionEditorRow, Alert, StatusBadge, PollSummary, SuccessMark, Skeleton, ConfirmDialog. Character counter is part of `TextInput`. Move up / Move down on `OptionEditorRow` follow captain decision 2A (WCAG 2.5.7); their copy is pending a `/product` spec change. Uses new tokens `--rotate-tilt-sm` and `--rotate-tilt-md`.
+- 2026-09-15 — Share and join poll. Added `Sheet` (pulled out of `ConfirmDialog`, which now builds on it), `ShareInviteModal`, `StickerHeading`, `NicknameField`, `EmptyState`, and a **Screens** section. Changed: `Button` (success state), `TextInput` (help text sits between label and field; described-by order), `NavBar` (minimal variant), `Alert` (title + body), `PollSummary` (invite variant, bubble modifier), `Skeleton` (sticker shape), plus Used in lines for `StatusBadge` and `SuccessMark`. Captain decisions: invite card keeps the speech bubble without a creator avatar; Copy is the share sheet's primary; on the confirmation screen, "Back to home" moves out of the bottom bar so it keeps two actions. No new tokens. Preview: `component-ShareAndJoinPoll.html`.

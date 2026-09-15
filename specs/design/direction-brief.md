@@ -1,8 +1,8 @@
 # Design Direction Brief
 
-**Status:** Draft
+**Status:** Approved
 **Created:** 2026-09-14
-**Last updated:** 2026-09-14
+**Last updated:** 2026-09-15
 
 **Direction:** Option B — Playful
 **Preview:** `specs/design/previews/direction-playful.html`
@@ -79,14 +79,14 @@ Light theme only (MVP). All pairs below are checked against WCAG 2.2 AA (text 4.
 ## Iconography
 - Outline icons on a 24px grid, 2–2.2px stroke, round caps and joins (Lucide style).
 - Icons always have a text label next to them or an `aria-label`; decorative icons are `aria-hidden`.
-- Key icons: check (selected, your vote, copied), trophy (leading), lock (closed), link (invite), share, copy, alert (errors).
+- Key icons: check (selected, your vote, copied), trophy (leading), lock (closed), link (invite), broken link (link doesn't work), share, copy, list (option count), home (back to home), alert (errors).
 
 ## Pattern Principles
 New components must follow these, so every feature looks like this direction:
 - **Buttons** are pills. One primary (filled orange) per screen; secondary is white with a 2px ink outline; ghost is text only.
 - **Answer options** are letter tiles (A, B, C…). Selected = filled `--color-action` with the letter replaced by a check icon.
 - **Emphasis cards** (question input, nickname, leading result) use `--color-action-subtle` with a 2px ink outline.
-- **Poll question** on invite screens sits in a speech-bubble card under the creator's avatar.
+- **Poll question** on invite and joined screens sits in a speech-bubble card whose tail points at the screen heading. No creator name or avatar.
 - **Modals** are bottom sheets on mobile and centered dialogs from `md` up.
 - **Confirmations** for quick actions (copy link) happen inline on the control; `Toast` is kept for background failures.
 - **Badges and tags** are uppercase pills with a 2px border in their own color.
@@ -120,3 +120,4 @@ Follows the Results Chart Rules in `design.md`, styled as:
 ## Changelog
 - 2026-09-14 — Brief created. Option B — Playful chosen by the captain; Option A — Calm rejected. Changes from the preview: `--shadow-lg` made direction-neutral for sheets and dialogs; `--ease-emphasized` added so data animations use a non-overshooting `--ease-standard`.
 - 2026-09-14 — Added Transform tokens `--rotate-tilt-sm` (-2deg) and `--rotate-tilt-md` (-6deg) for Create poll components (dragged option row, hero bars, success mark, logo mark). Same change in `tokens.css`. No tokens renamed or removed.
+- 2026-09-15 — Share and join poll: the invite speech-bubble pattern no longer uses the creator's avatar, because the spec keeps the creator's name and avatar off the invite page. The tail now points at the screen heading. Added broken link, list, and home to the key icons. No token changes.
