@@ -675,7 +675,6 @@ test.describe('regression tests for open bugs', () => {
   });
 
   test('BUG-06: auto-growing text fields are tall enough for their content, borders included', async ({ page }) => {
-    test.fail(); // BUG-06
     await page.goto('/polls/new');
     await question(page).fill('A question long enough to wrap onto a second line on narrow screens, and then some more words');
     await option(page, 1).fill('Pizza');

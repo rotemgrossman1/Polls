@@ -92,6 +92,25 @@ describe('TextInput', () => {
     expect(field).toHaveValue('Menu:\n\tPizza');
   });
 
+  test('grows to fit its content, with the borders added to the content height', () => {
+    // jsdom has no layout: content plus padding is 72px, and the borders take 4px.
+    const layout = { scrollHeight: 72, offsetHeight: 52, clientHeight: 48 };
+    Object.entries(layout).forEach(([name, size]) => {
+      Object.defineProperty(HTMLTextAreaElement.prototype, name, { configurable: true, get: () => size });
+    });
+
+    try {
+      render(<Controlled id="question" label="Question" maxLength={200} />);
+      const field = screen.getByLabelText('Question');
+
+      fireEvent.change(field, { target: { value: 'A question long enough to wrap' } });
+
+      expect(field.style.height).toBe('76px');
+    } finally {
+      Object.keys(layout).forEach((name) => delete HTMLTextAreaElement.prototype[name]);
+    }
+  });
+
   test('read-only fields cannot be edited', async () => {
     render(<Controlled id="question" label="Question" maxLength={200} initialValue="Lunch?" readOnly />);
     const field = screen.getByLabelText('Question');

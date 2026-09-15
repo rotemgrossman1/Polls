@@ -36,12 +36,14 @@ export default function TextInput({
   const counterId = `${id}-counter`;
   const atLimit = value.length >= maxLength;
 
-  // Grow the field to fit its content.
+  // Grow the field to fit its content. The height is border-box, so the borders are added
+  // to scrollHeight (content plus padding).
   useLayoutEffect(() => {
     const field = localRef.current;
     if (field) {
       field.style.height = 'auto';
-      field.style.height = `${field.scrollHeight}px`;
+      const borders = field.offsetHeight - field.clientHeight;
+      field.style.height = `${field.scrollHeight + borders}px`;
     }
   }, [value]);
 
