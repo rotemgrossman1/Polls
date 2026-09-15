@@ -3,10 +3,15 @@ import { COPY } from '../utils/uiCopy';
 import { ICON_PATHS, ICON_STROKE_WIDTH } from '../utils/iconPaths';
 import { ROUTES } from '../utils/routes';
 
-// Top bar with the logo link. The current user is added by Register and log in.
-export default function NavBar() {
+/**
+ * Top bar with the logo link (catalog: NavBar).
+ * - `variant="default"`: logo + current user. Register and log in adds the user; until then it
+ *   matches minimal.
+ * - `variant="minimal"`: logo only, for invite-link screens, so every visitor sees the same page.
+ */
+export default function NavBar({ variant = 'default' }) {
   return (
-    <header className="px-5 py-3">
+    <header className="px-5 py-3" data-variant={variant}>
       <nav className="mx-auto flex w-full max-w-container items-center gap-3">
         <Link
           to={ROUTES.home}

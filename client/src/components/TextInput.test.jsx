@@ -202,6 +202,86 @@ describe('TextInput', () => {
     expect(screen.getByLabelText('Option 1')).toHaveAttribute('id', 'option-1');
   });
 
+  test('help text sits between the label and the field and describes it before the counter', () => {
+    render(
+      <Controlled
+        id="nickname"
+        label="Your nickname"
+        helpText="The poll's creator will see this name."
+        maxLength={20}
+      />,
+    );
+
+    const label = screen.getByText('Your nickname');
+    const help = screen.getByText("The poll's creator will see this name.");
+    const field = screen.getByLabelText('Your nickname');
+    // eslint-disable-next-line no-bitwise
+    expect(label.compareDocumentPosition(help) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // eslint-disable-next-line no-bitwise
+    expect(help.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(field).toHaveAttribute('aria-describedby', 'nickname-help nickname-counter');
+    expect(field).toHaveAccessibleDescription("The poll's creator will see this name. 0/20");
+  });
+
+  test('describes the field with the error first, then the help text, then the counter', () => {
+    render(
+      <Controlled
+        id="nickname"
+        label="Your nickname"
+        helpText="The poll's creator will see this name."
+        maxLength={20}
+        error="Enter a nickname."
+      />,
+    );
+
+    const field = screen.getByLabelText('Your nickname');
+    expect(field).toHaveAttribute('aria-describedby', 'nickname-error nickname-help nickname-counter');
+    expect(field).toHaveAccessibleDescription("Enter a nickname. The poll's creator will see this name. 0/20");
+  });
+
+  test('passes autocomplete and enterkeyhint through to the field', () => {
+    render(
+      <Controlled id="nickname" label="Your nickname" maxLength={20} autoComplete="nickname" enterKeyHint="go" />,
+    );
+
+    const field = screen.getByLabelText('Your nickname');
+    expect(field).toHaveAttribute('autocomplete', 'nickname');
+    expect(field).toHaveAttribute('enterkeyhint', 'go');
+  });
+
+  test('single-line fields call onEnter when Enter is pressed, without adding a line break', async () => {
+    const onEnter = jest.fn();
+    render(<Controlled id="nickname" label="Your nickname" maxLength={20} onEnter={onEnter} />);
+    const field = screen.getByLabelText('Your nickname');
+
+    await userEvent.type(field, 'Noa{Enter}');
+
+    expect(onEnter).toHaveBeenCalledTimes(1);
+    expect(field).toHaveValue('Noa');
+  });
+
+  test('Enter that confirms an input method composition does not call onEnter', () => {
+    const onEnter = jest.fn();
+    render(<Controlled id="nickname" label="Your nickname" maxLength={20} onEnter={onEnter} />);
+
+    fireEvent.keyDown(screen.getByLabelText('Your nickname'), { key: 'Enter', isComposing: true });
+
+    expect(onEnter).not.toHaveBeenCalled();
+  });
+
+  test('multiline fields keep Enter for line breaks and do not call onEnter', async () => {
+    const onEnter = jest.fn();
+    render(
+      <Controlled id="details" label="Details (optional)" maxLength={1000} variant="multiline" onEnter={onEnter} />,
+    );
+    const field = screen.getByLabelText('Details (optional)');
+
+    await userEvent.type(field, 'a{Enter}b');
+
+    expect(onEnter).not.toHaveBeenCalled();
+    expect(field).toHaveValue('a\nb');
+  });
+
   test('passes the field element to inputRef', () => {
     const inputRef = { current: null };
     render(<Controlled id="question" label="Question" maxLength={200} inputRef={inputRef} />);

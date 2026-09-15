@@ -103,6 +103,8 @@ module.exports = {
     },
     rotate: {
       0: '0deg',
+      // Catalog: PollSummary's bubble tail is a square turned 45deg, a shape rather than a tilt.
+      45: '45deg',
       'tilt-sm': token('rotate-tilt-sm'),
       'tilt-md': token('rotate-tilt-md'),
     },

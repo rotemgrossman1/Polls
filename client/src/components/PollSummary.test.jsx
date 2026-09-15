@@ -95,6 +95,70 @@ describe('PollSummary', () => {
   });
 });
 
+describe('PollSummary invite variant', () => {
+  // The invite DTO: no id, creator, options or answer type.
+  function invite(overrides = {}) {
+    return {
+      question: 'Where should we hold the Q4 team offsite?',
+      details: 'Budget is small.\nVote by Thursday.',
+      status: 'open',
+      optionCount: 4,
+      ...overrides,
+    };
+  }
+
+  test('shows status, option count with a list icon, question and details, and no options or answer type', () => {
+    const { container } = render(<PollSummary poll={invite()} variant="invite" />);
+
+    const article = screen.getByRole('article', { name: 'Where should we hold the Q4 team offsite?' });
+    expect(within(article).getByText('Open')).toBeInTheDocument();
+    expect(within(article).getByText('4 options')).toBeInTheDocument();
+    expect(screen.getByTestId('option-count-icon')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText(/Budget is small\./).textContent).toBe('Budget is small.\nVote by Thursday.');
+    expect(within(article).queryByRole('list')).not.toBeInTheDocument();
+    expect(container.querySelector('[data-testid="answer-type-icon"]')).toBeNull();
+    expect(within(article).queryByText(/choice/)).not.toBeInTheDocument();
+  });
+
+  test('gives each summary its own heading id, since invites have no poll id', () => {
+    render(
+      <>
+        <PollSummary poll={invite({ question: 'Pizza or sushi?' })} variant="invite" />
+        <PollSummary poll={invite({ question: 'Beach or mountains?' })} variant="invite" />
+      </>,
+    );
+
+    const headings = screen.getAllByRole('heading', { level: 2 });
+    expect(headings[0].id).not.toBe(headings[1].id);
+    expect(screen.getByRole('article', { name: 'Pizza or sushi?' })).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Beach or mountains?' })).toBeInTheDocument();
+  });
+
+  test('renders markup and script as plain text', () => {
+    const { container } = render(
+      <PollSummary
+        poll={invite({ question: '<script>alert(1)</script>', details: '<b>bold</b>' })}
+        variant="invite"
+      />,
+    );
+
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('<script>alert(1)</script>');
+    expect(screen.getByText('<b>bold</b>')).toBeInTheDocument();
+    expect(container.querySelector('script, b')).toBeNull();
+  });
+
+  test('bubble adds a decorative tail and room above the card; without it there is none', () => {
+    const { rerender } = render(<PollSummary poll={invite()} variant="invite" bubble />);
+
+    expect(screen.getByTestId('bubble-tail')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('article')).toHaveClass('mt-2');
+
+    rerender(<PollSummary poll={invite()} variant="invite" />);
+    expect(screen.queryByTestId('bubble-tail')).not.toBeInTheDocument();
+    expect(screen.getByRole('article')).not.toHaveClass('mt-2');
+  });
+});
+
 describe('StatusBadge', () => {
   test('reads the spec copy with a decorative marker', () => {
     const { container } = render(<StatusBadge status="open" />);
@@ -115,5 +179,13 @@ describe('SuccessMark and Skeleton', () => {
 
     expect(screen.getByTestId('success-mark')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByTestId('skeleton')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  test('the sticker skeleton is a tilted pill, like StickerHeading', () => {
+    render(<Skeleton variant="sticker" width="1/2" />);
+
+    const sticker = screen.getByTestId('skeleton');
+    expect(sticker).toHaveAttribute('data-shape', 'sticker');
+    expect(sticker).toHaveClass('rounded-full', 'rotate-tilt-sm', 'w-1/2');
   });
 });

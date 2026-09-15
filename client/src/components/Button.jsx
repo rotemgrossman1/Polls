@@ -29,6 +29,9 @@ const LOADING = {
   danger: 'border border-transparent bg-danger text-text-inverse shadow-none cursor-progress',
 };
 
+// Hover keeps the success fill (catalog: Button success).
+const SUCCESS = `bg-success text-text-inverse shadow-md ${PRESS}`;
+
 const DISABLED = 'border border-border-strong bg-surface text-text-muted shadow-none cursor-not-allowed';
 
 const WIDTHS = {
@@ -39,6 +42,8 @@ const WIDTHS = {
 /**
  * Pill button from the catalog.
  * - `loading`: spinner + label, aria-disabled so focus stays, presses ignored.
+ * - `success`: success fill with a check icon for a short confirmation; stays usable. The caller
+ *   announces the confirmation in a separate polite live region.
  * - `unavailable`: aria-disabled but focusable (pair with aria-describedby for the reason).
  * - `disabled`: native disabled.
  * - `block`: true for full width, 'mobile' for full width below md.
@@ -49,6 +54,7 @@ export default function Button({
   size = 'default',
   block = false,
   loading = false,
+  success = false,
   unavailable = false,
   disabled = false,
   icon,
@@ -58,13 +64,18 @@ export default function Button({
   ...rest
 }) {
   const inert = loading || unavailable;
+  const showSuccess = success && !inert && !disabled;
 
   let stateClasses = VARIANTS[variant];
   if (loading) {
     stateClasses = LOADING[variant];
   } else if (unavailable || disabled) {
     stateClasses = DISABLED;
+  } else if (showSuccess) {
+    stateClasses = SUCCESS;
   }
+
+  const iconName = showSuccess ? 'check' : icon;
 
   function handleClick(event) {
     if (inert) {
@@ -92,9 +103,10 @@ export default function Button({
           className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-spin-slow"
         />
       )}
-      {!loading && icon && (
+      {!loading && iconName && (
         <svg
           aria-hidden="true"
+          data-icon={iconName}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -103,7 +115,7 @@ export default function Button({
           strokeLinejoin="round"
           className="h-5 w-5 shrink-0"
         >
-          <path d={ICON_PATHS[icon]} />
+          <path d={ICON_PATHS[iconName]} />
         </svg>
       )}
       {children}
