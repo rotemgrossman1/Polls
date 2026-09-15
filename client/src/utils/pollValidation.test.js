@@ -30,6 +30,25 @@ describe('validatePollForm', () => {
     expect(errors.options).toEqual({ k1: FIELD_ERROR.EMPTY, k2: FIELD_ERROR.EMPTY });
   });
 
+  test('a question or option of only invisible characters is empty', () => {
+    const errors = validatePollForm({
+      question: '\u200B\u200B\u200B',
+      options: opts('Pizza', '\u200B\u200B', ' \u200D\u2060\uFEFF '),
+    });
+
+    expect(errors).toEqual({
+      question: FIELD_ERROR.EMPTY,
+      options: { k1: FIELD_ERROR.EMPTY, k2: FIELD_ERROR.EMPTY },
+    });
+  });
+
+  test('invisible characters between visible ones do not make text empty', () => {
+    const family = '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}';
+    const errors = validatePollForm({ question: `Who comes? ${family}`, options: opts(family, 'Soft\u00ADhyphen') });
+
+    expect(hasErrors(errors)).toBe(false);
+  });
+
   test('later duplicates get the error, ignoring case and surrounding spaces', () => {
     const errors = validatePollForm({
       question: 'Coming?',

@@ -5,6 +5,11 @@ export const FIELD_ERROR = {
 
 export const NO_ERRORS = { question: null, options: {} };
 
+// Only whitespace and invisible characters (zero-width spaces, joiners, BOM): counts as empty.
+const BLANK = /^[\p{White_Space}\p{Default_Ignorable_Code_Point}]*$/u;
+
+const isBlank = (text) => BLANK.test(text);
+
 const normalizeOption = (text) => text.trim().toLowerCase();
 
 /**
@@ -13,14 +18,16 @@ const normalizeOption = (text) => text.trim().toLowerCase();
  * The duplicate error goes on later duplicates; an empty option is never a duplicate.
  */
 export function validatePollForm({ question, options }) {
-  const errors = { question: question.trim() ? null : FIELD_ERROR.EMPTY, options: {} };
+  const errors = { question: isBlank(question) ? FIELD_ERROR.EMPTY : null, options: {} };
   const seen = new Set();
 
   options.forEach((option) => {
-    const normalized = normalizeOption(option.text);
-    if (!normalized) {
+    if (isBlank(option.text)) {
       errors.options[option.key] = FIELD_ERROR.EMPTY;
-    } else if (seen.has(normalized)) {
+      return;
+    }
+    const normalized = normalizeOption(option.text);
+    if (seen.has(normalized)) {
       errors.options[option.key] = FIELD_ERROR.DUPLICATE;
     } else {
       seen.add(normalized);

@@ -3,6 +3,9 @@ const { POLL_LIMITS, ANSWER_TYPES } = require('./pollRules');
 
 const LINE_BREAK = /[\r\n]/;
 
+// Only whitespace and invisible characters (zero-width spaces, joiners, BOM): counts as empty.
+const BLANK = /^[\p{White_Space}\p{Default_Ignorable_Code_Point}]*$/u;
+
 // Trimmed, non-empty, single-line text up to `max` characters.
 const singleLineText = (max) =>
   z
@@ -10,6 +13,7 @@ const singleLineText = (max) =>
     .trim()
     .min(1)
     .max(max)
+    .refine((value) => !BLANK.test(value), { message: 'Must not be empty' })
     .refine((value) => !LINE_BREAK.test(value), { message: 'Must be a single line' });
 
 const normalizeOption = (text) => text.toLowerCase();

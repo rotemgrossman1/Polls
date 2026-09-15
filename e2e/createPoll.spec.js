@@ -662,7 +662,6 @@ test.describe('create poll form', () => {
 // Regression tests for open bugs (QA Report, Bugs). Marked test.fail() until dev fixes each bug.
 test.describe('regression tests for open bugs', () => {
   test('BUG-01: a question of only zero-width spaces shows the empty-question error and saves nothing', async ({ page }) => {
-    test.fail(); // BUG-01
     const creates = countCreateRequests(page);
     await page.goto('/polls/new');
     await question(page).fill('\u200B\u200B\u200B');

@@ -64,9 +64,19 @@ describe('createPollBody', () => {
     expect(result.data.options).toEqual(['<script>alert(1)</script>', '<b>Sushi</b>']);
   });
 
+  test('keeps invisible characters that sit between visible ones', () => {
+    const family = '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}';
+    const result = parse(validBody({ question: `Who comes? ${family}`, options: [family, 'Soft\u00ADhyphen'] }));
+
+    expect(result.success).toBe(true);
+    expect(result.data.options).toEqual([family, 'Soft\u00ADhyphen']);
+  });
+
   test.each([
     ['empty question', { question: '' }],
     ['spaces-only question', { question: '    ' }],
+    ['question of only zero-width spaces', { question: '\u200B\u200B\u200B' }],
+    ['option of only zero-width joiners, word joiners, a BOM, and spaces', { options: ['Pizza', ' \u200D\u2060\uFEFF '] }],
     ['question over 200 characters', { question: 'q'.repeat(201) }],
     ['question with a line break', { question: 'Where\nshould we eat?' }],
     ['missing question', { question: undefined }],

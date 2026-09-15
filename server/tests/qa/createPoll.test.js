@@ -381,7 +381,7 @@ describe('QA: Create poll API (adversarial)', () => {
   // Regression tests for open bugs (QA Report, Bugs). Expected to fail until dev fixes each bug
   // and removes `.failing` in the fix commit.
   describe('regression tests for open bugs', () => {
-    test.failing.each([
+    test.each([
       ['a question of only zero-width spaces', { question: '​​​' }],
       ['an option of only zero-width spaces', { options: ['Pizza', '​​'] }],
       ['an option of only zero-width joiners, word joiners, and a BOM', { options: ['Pizza', '‍⁠﻿'] }],
