@@ -8,6 +8,7 @@ module.exports = (sequelize) => {
     static associate(models) {
       Poll.belongsTo(models.User, { as: 'creator', foreignKey: 'creatorId' });
       Poll.hasMany(models.PollOption, { as: 'options', foreignKey: 'pollId', onDelete: 'CASCADE' });
+      Poll.hasMany(models.Participant, { as: 'participants', foreignKey: 'pollId', onDelete: 'CASCADE' });
     }
   }
 
