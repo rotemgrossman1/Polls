@@ -3,7 +3,11 @@ const { DataTypes, Model } = require('sequelize');
 const USERNAME_MAX_LENGTH = 50;
 
 module.exports = (sequelize) => {
-  class User extends Model {}
+  class User extends Model {
+    static associate(models) {
+      User.hasMany(models.Poll, { as: 'polls', foreignKey: 'creatorId', onDelete: 'CASCADE' });
+    }
+  }
 
   User.init(
     {

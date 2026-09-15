@@ -8,6 +8,8 @@ const sequelize = new Sequelize(url, options);
 
 const models = {
   User: require('./user')(sequelize),
+  Poll: require('./poll')(sequelize),
+  PollOption: require('./pollOption')(sequelize),
 };
 
 Object.values(models).forEach((model) => {
