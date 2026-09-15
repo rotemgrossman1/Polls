@@ -5,7 +5,7 @@ module.exports = {
   moduleNameMapper: {
     '\\.css$': 'identity-obj-proxy',
     // apiConfig reads import.meta.env, which Jest cannot parse.
-    '^(.*)/services/apiConfig(\\.js)?$': '<rootDir>/test/apiConfigStub.js',
+    '^(.*/)?apiConfig(\\.js)?$': '<rootDir>/test/apiConfigStub.js',
   },
   clearMocks: true,
 };
