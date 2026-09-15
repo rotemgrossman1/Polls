@@ -48,6 +48,15 @@ describe('createPollBody', () => {
     expect(result.data.details).toBe('Menu:\n\tPizza\r\n\tSushi');
   });
 
+  test('counts limits in UTF-16 units: 100 emoji question, 500 emoji details, 50 emoji option', () => {
+    const emoji = '\u{1F600}';
+    const result = parse(
+      validBody({ question: emoji.repeat(100), details: emoji.repeat(500), options: [emoji.repeat(50), 'Sushi'] }),
+    );
+
+    expect(result.success).toBe(true);
+  });
+
   test('accepts multiple choice', () => {
     expect(parse(validBody({ answerType: 'multiple' })).success).toBe(true);
   });
@@ -85,6 +94,9 @@ describe('createPollBody', () => {
     ['question of only zero-width spaces', { question: '\u200B\u200B\u200B' }],
     ['option of only zero-width joiners, word joiners, a BOM, and spaces', { options: ['Pizza', ' \u200D\u2060\uFEFF '] }],
     ['question over 200 characters', { question: 'q'.repeat(201) }],
+    ['question of 101 emoji (202 UTF-16 units)', { question: '\u{1F600}'.repeat(101) }],
+    ['option of 51 emoji (102 UTF-16 units)', { options: ['Pizza', '\u{1F600}'.repeat(51)] }],
+    ['details of 501 emoji (1002 UTF-16 units)', { details: '\u{1F600}'.repeat(501) }],
     ['question with a line break', { question: 'Where\nshould we eat?' }],
     ['missing question', { question: undefined }],
     ['question with a null byte', { question: 'Lunch\u0000?' }],

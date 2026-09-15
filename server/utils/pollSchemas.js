@@ -11,13 +11,16 @@ const BLANK = /^[\p{White_Space}\p{Default_Ignorable_Code_Point}]*$/u;
 const CONTROL_OR_LONE_SURROGATE = /[\p{Cc}\p{Cs}]/u;
 const DETAILS_CONTROL_OR_LONE_SURROGATE = /(?![\t\n\r])[\p{Cc}\p{Cs}]/u;
 
+// Length limits count UTF-16 units, like the form's maxLength (Zod's .max counts code points).
+const withinLength = (max) => (value) => value.length <= max;
+
 // Trimmed, non-empty, single-line text up to `max` characters.
 const singleLineText = (max) =>
   z
     .string()
     .trim()
     .min(1)
-    .max(max)
+    .refine(withinLength(max), { message: 'Too long' })
     .refine((value) => !BLANK.test(value), { message: 'Must not be empty' })
     .refine((value) => !LINE_BREAK.test(value), { message: 'Must be a single line' })
     .refine((value) => !CONTROL_OR_LONE_SURROGATE.test(value), { message: 'Must not contain control characters' });
@@ -30,7 +33,7 @@ const createPollBody = z.strictObject({
   details: z
     .string()
     .trim()
-    .max(POLL_LIMITS.DETAILS_MAX_LENGTH)
+    .refine(withinLength(POLL_LIMITS.DETAILS_MAX_LENGTH), { message: 'Too long' })
     .refine((value) => !DETAILS_CONTROL_OR_LONE_SURROGATE.test(value), {
       message: 'Must not contain control characters',
     })

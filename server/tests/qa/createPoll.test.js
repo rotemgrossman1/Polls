@@ -419,7 +419,7 @@ describe('QA: Create poll API (adversarial)', () => {
       await expectRejectedAndNothingSaved(overrides);
     });
 
-    test.failing('BUG-05: 101 emoji in the question (202 UTF-16 units) is over the 200 limit and rejected', async () => {
+    test('BUG-05: 101 emoji in the question (202 UTF-16 units) is over the 200 limit and rejected', async () => {
       await expectRejectedAndNothingSaved({ question: '😀'.repeat(101) });
     });
   });
