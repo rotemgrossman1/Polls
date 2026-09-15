@@ -345,8 +345,15 @@ All made by the captain on 2026-09-14 unless marked as a dev proposal in this pl
 - **/design UI review (captain, 2026-09-15):**
   - Fixed: V1 (logo link touch target), V2 (h1 on loading and load-error screens), V3 (drag handle grip drawn as filled dots).
   - V2 reuses existing spec copy as the heading: "Loading poll…" and "We couldn't load this poll." No new copy.
-  - Deferred for later: V4–V9 and design-system issues D1–D6.
-  - /qa deferred until V4–V9 are fixed, so the spec stays In Dev.
+  - Then fixed (captain, 2026-09-15):
+    - V4: page headings are `text-2xl`, as in the CreatePoll preview. A catalog entry for page headings is still pending (D3).
+    - V5: the single-choice icon is a ring with a filled dot.
+    - V6: the drag handle has the catalog icon-button hover.
+    - V7: a top divider sits above the summary option list.
+    - V8: hero bar proportions and gap follow the preview, using Tailwind width fractions.
+    - V9: Button colors ease with `--ease-standard`; only the press uses `--ease-emphasized`.
+  - Deferred for later: design-system issues D1–D6.
+  - Handoff to /qa waits for the captain's go-ahead.
 
 ### Risks & Open Questions
 - **For `/design` (dev does not edit the catalog):** remove Move up/down from `OptionEditorRow` / `OptionListEditor` and the live-region announcement; NavBar shows no user yet; the Nunito and icon deferred decisions are resolved as "no package"; the brief and catalog are still `Draft`.
