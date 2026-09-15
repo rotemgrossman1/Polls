@@ -39,6 +39,18 @@ describe('PollSummary', () => {
     ]);
   });
 
+  test('single choice uses a dot-in-circle icon, and a divider separates the options from the content above', () => {
+    const { container, rerender } = render(<PollSummary poll={poll()} />);
+    const iconPaths = () => container.querySelectorAll('[data-testid="answer-type-icon"] path');
+
+    expect(iconPaths()).toHaveLength(2);
+    expect(iconPaths()[1]).toHaveAttribute('fill', 'currentColor');
+    expect(screen.getByRole('list')).toHaveClass('border-t-2', 'border-border');
+
+    rerender(<PollSummary poll={poll({ answerType: 'multiple' })} />);
+    expect(iconPaths()).toHaveLength(1);
+  });
+
   test('shows Multiple choice for multiple-answer polls', () => {
     render(<PollSummary poll={poll({ answerType: 'multiple' })} />);
 

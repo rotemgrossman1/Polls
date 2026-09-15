@@ -14,6 +14,8 @@ export const ICON_PATHS = {
     'M10.7 12a1.7 1.7 0 1 1-3.4 0 1.7 1.7 0 0 1 3.4 0ZM16.7 12a1.7 1.7 0 1 1-3.4 0 1.7 1.7 0 0 1 3.4 0Z' +
     'M10.7 18a1.7 1.7 0 1 1-3.4 0 1.7 1.7 0 0 1 3.4 0ZM16.7 18a1.7 1.7 0 1 1-3.4 0 1.7 1.7 0 0 1 3.4 0Z',
   bars: 'M5 20V10M12 20V4M19 20v-6',
-  singleChoice: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
+  // Single choice is a stroked ring plus a filled center dot.
+  singleChoice: 'M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z',
+  singleChoiceDot: 'M15.5 12a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z',
   multipleChoice: 'M8 8h12v12H8zM4 16V4h12',
 };

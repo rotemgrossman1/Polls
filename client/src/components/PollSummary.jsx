@@ -3,9 +3,10 @@ import { COPY } from '../utils/uiCopy';
 import { ANSWER_TYPE } from '../utils/pollRules';
 import { ICON_PATHS, ICON_STROKE_WIDTH } from '../utils/iconPaths';
 
+// `stroke` paths are outlined; an optional `fill` path is drawn solid.
 const ANSWER_TYPE_ICONS = {
-  [ANSWER_TYPE.SINGLE]: ICON_PATHS.singleChoice,
-  [ANSWER_TYPE.MULTIPLE]: ICON_PATHS.multipleChoice,
+  [ANSWER_TYPE.SINGLE]: { stroke: ICON_PATHS.singleChoice, fill: ICON_PATHS.singleChoiceDot },
+  [ANSWER_TYPE.MULTIPLE]: { stroke: ICON_PATHS.multipleChoice },
 };
 
 /**
@@ -14,6 +15,7 @@ const ANSWER_TYPE_ICONS = {
  */
 export default function PollSummary({ poll }) {
   const questionId = `poll-summary-question-${poll.id}`;
+  const icon = ANSWER_TYPE_ICONS[poll.answerType];
 
   return (
     <article
@@ -25,6 +27,7 @@ export default function PollSummary({ poll }) {
         <span className="inline-flex items-center gap-1">
           <svg
             aria-hidden="true"
+            data-testid="answer-type-icon"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -33,7 +36,8 @@ export default function PollSummary({ poll }) {
             strokeLinejoin="round"
             className="h-5 w-5 shrink-0"
           >
-            <path d={ANSWER_TYPE_ICONS[poll.answerType]} />
+            <path d={icon.stroke} />
+            {icon.fill && <path d={icon.fill} fill="currentColor" stroke="none" />}
           </svg>
           {COPY.confirmation.answerType[poll.answerType]}
         </span>
@@ -46,9 +50,9 @@ export default function PollSummary({ poll }) {
           {poll.details}
         </p>
       )}
-      <ol className="flex flex-col divide-y-2 divide-border">
+      <ol className="flex flex-col divide-y-2 divide-border border-t-2 border-border">
         {poll.options.map((option, index) => (
-          <li key={option.id} className="flex items-start gap-3 py-3 font-medium text-text">
+          <li key={option.id} className="flex items-start gap-3 py-3 font-medium text-text last:pb-0">
             <span
               aria-hidden="true"
               className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-text text-sm font-bold"
