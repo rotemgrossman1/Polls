@@ -1,0 +1,61 @@
+// UI copy, word for word from specs/features/2026-09-14-create-poll.md (UI Copy table).
+export const COPY = {
+  app: {
+    name: 'Polls',
+  },
+  landing: {
+    heading: 'Welcome',
+    intro: 'Create a poll and share it with others.',
+    createButton: 'Create poll',
+  },
+  form: {
+    heading: 'Create a poll',
+    questionLabel: 'Question',
+    questionPlaceholder: 'What do you want to ask?',
+    addDetails: 'Add details',
+    detailsLabel: 'Details (optional)',
+    detailsPlaceholder: 'Add context for the people answering.',
+    removeDetails: 'Remove details',
+    answerTypeLabel: 'Answer type',
+    singleChoice: 'Single choice — people pick one answer',
+    multipleChoice: 'Multiple choice — people can pick more than one answer',
+    optionsLabel: 'Options',
+    optionsHelper: 'Add 2 to 8 options. Drag to reorder.',
+    optionPlaceholder: (n) => `Option ${n}`,
+    dragHandleLabel: (n) => `Drag to reorder option ${n}`,
+    removeOptionLabel: (n) => `Remove option ${n}`,
+    addOption: 'Add option',
+    addOptionHint: 'You can add up to 8 options.',
+    createButton: 'Create poll',
+    creatingButton: 'Creating…',
+    cancelButton: 'Cancel',
+  },
+  counter: (count, max) => `${count}/${max}`,
+  errors: {
+    questionEmpty: 'Enter a question.',
+    optionEmpty: 'Fill in this option or remove it.',
+    optionDuplicate: 'This option is already in the list.',
+    saveFailed: "Couldn't create your poll. Check your connection and try again.",
+  },
+  discardDialog: {
+    title: 'Discard this poll?',
+    body: "What you've entered will be lost.",
+    discard: 'Discard',
+    keepEditing: 'Keep editing',
+  },
+  confirmation: {
+    heading: 'Poll created',
+    intro: 'Your poll is open and ready for answers.',
+    answerType: {
+      single: 'Single choice',
+      multiple: 'Multiple choice',
+    },
+    status: {
+      open: 'Open',
+    },
+    backHome: 'Back to home',
+    createAnother: 'Create another poll',
+    loading: 'Loading poll…',
+    loadError: "We couldn't load this poll.",
+  },
+};

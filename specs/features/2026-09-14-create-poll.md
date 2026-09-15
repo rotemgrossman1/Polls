@@ -1,6 +1,6 @@
 # Feature: Create poll
 
-**Status:** In Dev
+**Status:** In QA
 **Created:** 2026-09-14
 **Last updated:** 2026-09-14
 
@@ -184,7 +184,7 @@ The landing page is the app's start page. Until Register and log in ships, the a
 
 **Plan status:** Approved
 **Author:** /dev
-**Last updated:** 2026-09-14
+**Last updated:** 2026-09-15
 
 ### Summary
 Set up the server and client, then build Create poll end to end. Server: `users`, `polls`, `poll_options` tables. A router-level `requireUser` stand-in loads the seeded test user. Two endpoints: `POST /api/polls` (transactional, idempotent through `clientRequestId`) and `GET /api/polls/:pollId` (scoped to the creator; 404 otherwise). Client: three routes (landing, create form, confirmation), built only from catalog components styled through token-mapped Tailwind classes. Form state and validation live in a hook plus pure utils. Drag reordering is a hand-written Pointer Events hook, so it works with mouse and touch without a dependency. The [Could] discard dialog is included and triggered by Cancel only.
@@ -217,7 +217,7 @@ Poll object: `{ id, question, details: string|null, answerType: 'single'|'multip
 
 | Method | Route | Auth | Validation | Success | Errors |
 |--------|-------|------|------------|---------|--------|
-| POST | /api/polls | `requireUser` (router) | body (strict): `question` trim 1–200, no line breaks; `details` optional string or null, trim, max 1000, empty → null; `answerType` enum; `options` 2–8 strings, each trim 1–100, no line breaks, unique by trim + lowercase; `clientRequestId` UUID | 201 `{ data: poll }` new. 200 `{ data: poll }` when this creator already used `clientRequestId` (replay returns the existing poll) | 400 "Invalid request", 401 "Authentication required", 413 "Request too large", 500 "Something went wrong" |
+| POST | /api/polls | `requireUser` (router) | body (strict): `question` trim 1–200, not blank (only whitespace or invisible characters), no line breaks or control characters; `details` optional string or null, trim, max 1000, empty → null, no control characters other than tabs and line breaks; `answerType` enum; `options` 2–8 strings, each trim 1–100, not blank, no line breaks or control characters, unique by trim + lowercase + NFC; `clientRequestId` UUID. Lone surrogates are rejected in every text field | 201 `{ data: poll }` new. 200 `{ data: poll }` when this creator already used `clientRequestId` (replay returns the existing poll) | 400 "Invalid request", 401 "Authentication required", 413 "Request too large", 500 "Something went wrong" |
 | GET | /api/polls/:pollId | `requireUser` (router) | params: `pollId` UUID; a malformed ID returns **404**, not 400 | 200 `{ data: poll }` | 404 "Poll not found" (doesn't exist, belongs to another user, or malformed ID), 401, 500 |
 
 Also: unknown `/api/*` routes → 404 envelope; malformed JSON → 400.
@@ -267,8 +267,9 @@ Files at the server root: `server/app.js` (exports the app for Supertest) and `s
 ### Edge Cases
 - **Repeated clicks:** a synchronous ref guard plus the locked button on the client, and the idempotency key plus unique constraint on the server.
 - **Lost response, then retry:** the same `clientRequestId` returns the existing poll with 200, so no duplicate is created.
-- **Spaces-only or leading/trailing spaces:** trimmed in client validation and in Zod before saving.
-- **Case or space duplicates:** trim + lowercase comparison on both client and server.
+- **Spaces-only or leading/trailing spaces:** trimmed in client validation and in Zod before saving. Text made only of whitespace and invisible characters (zero-width spaces, joiners, BOM) counts as empty on both sides.
+- **Case or space duplicates:** trim + lowercase + NFC comparison on both client and server.
+- **Control characters and lone surrogates:** rejected by Zod; the form removes them as typed or pasted, and single-line fields turn tabs into spaces.
 - **Pasting past the limit:** native `maxLength` cuts pasted text (UTF-16 counting, matched by Zod); the counter shows the maximum and the at-limit style.
 - **Max-length content at 360px:** `break-words` / `overflow-wrap:anywhere`, auto-grow textareas, no truncation, `whitespace-pre-wrap` for details.
 - **RTL and emoji:** `dir="auto"` on inputs and displayed user text; UTF-8 end to end.
@@ -341,6 +342,29 @@ All made by the captain on 2026-09-14 unless marked as a dev proposal in this pl
   - Client tests use Jest, per `CLAUDE.md`, rather than Vitest.
   - UI strings are kept in `utils/uiCopy.js`.
   - 20kb body limit.
+- **Package pin (dev, 2026-09-15):** `@vitejs/plugin-react` pinned to 5.2 (v6 has a Babel peer conflict with Jest's Babel 7 presets).
+- **/design UI review (captain, 2026-09-15):**
+  - Fixed: V1 (logo link touch target), V2 (h1 on loading and load-error screens), V3 (drag handle grip drawn as filled dots).
+  - V2 reuses existing spec copy as the heading: "Loading poll…" and "We couldn't load this poll." No new copy.
+  - Then fixed (captain, 2026-09-15):
+    - V4: page headings are `text-2xl`, as in the CreatePoll preview. A catalog entry for page headings is still pending (D3).
+    - V5: the single-choice icon is a ring with a filled dot.
+    - V6: the drag handle has the catalog icon-button hover.
+    - V7: a top divider sits above the summary option list.
+    - V8: hero bar proportions and gap follow the preview, using Tailwind width fractions.
+    - V9: Button colors ease with `--ease-standard`; only the press uses `--ease-emphasized`.
+  - Deferred for later: design-system issues D1–D6.
+  - Handoff to /qa waits for the captain's go-ahead.
+- **QA round 1 fixes (2026-09-15):**
+  - BUG-01: "blank" means only `\p{White_Space}` and `\p{Default_Ignorable_Code_Point}` characters, checked in Zod and in `pollValidation.js`. Invisible characters between visible ones (emoji ZWJ sequences, soft hyphens) are kept.
+  - BUG-02 (captain): the API rejects C0, DEL and C1 control characters and lone surrogates; details may keep tabs and line breaks. The form cleans them on input (`utils/cleanText.js` in `TextInput`), and single-line fields turn tabs into spaces, so no new UI copy is needed.
+  - BUG-03: duplicates compare with NFC normalization on both sides; stored text is not normalized.
+  - Not changed: details made only of invisible characters are saved as entered (the ruling covers question and options only).
+- **Minor bugs and test audit (captain, 2026-09-15):** BUG-04 to BUG-06 fixed before QA round 2.
+  - BUG-04: U+2028 and U+2029 count as line breaks. They are rejected in the question and options, and the form turns them into spaces.
+  - BUG-05: text limits use a `.length` refine (UTF-16 units) instead of Zod `.max`, which counts code points in Zod 4.
+  - BUG-06: auto-grow height is `scrollHeight` plus the border width (`offsetHeight - clientHeight`).
+  - Dev Test Audit: CSS-only class assertions removed (behavior checks kept); the `usePoll` unmount test replaced by a late-response test; a drag auto-scroll test added; tests delete `TEST_USER_USERNAME` when it was unset.
 
 ### Risks & Open Questions
 - **For `/design` (dev does not edit the catalog):** remove Move up/down from `OptionEditorRow` / `OptionListEditor` and the live-region announcement; NavBar shows no user yet; the Nunito and icon deferred decisions are resolved as "no package"; the brief and catalog are still `Draft`.
@@ -350,8 +374,173 @@ All made by the captain on 2026-09-14 unless marked as a dev proposal in this pl
 - **Local setup:** the captain provides DB credentials in `server/.env` and creates the dev and test databases (or approves me running `createdb`).
 
 ### Handoff Notes
-Filled in at hand off, for `/qa`.
-- Branch:
-- How to run (setup, seed data, env vars):
-- What to test first:
-- Known limitations:
+Filled in at hand off, for `/qa` (2026-09-15).
+
+- **Branch:** `feature/2026-09-14-create-poll` (PR rotemgrossman1/Polls#2).
+
+- **How to run:**
+  1. PostgreSQL: create a dev database and a separate test database.
+  2. `server/.env` from `server/.env.example`:
+     - `DATABASE_URL` and `DATABASE_URL_TEST` (the two must differ)
+     - `TEST_USER_USERNAME` (e.g. `test-user`)
+     - `CLIENT_URL=http://localhost:5173`
+     - `PORT=3000`
+  3. `cd server && npm install && npm run db:migrate && npm run db:seed && npm run dev`
+  4. `client/.env` from `client/.env.example`: `VITE_API_URL=http://localhost:3000/api`.
+  5. `cd client && npm install && npm run dev`, then open http://localhost:5173.
+  6. Tests: `npm test` in `server/` (migrates the test database automatically) and in `client/`.
+  7. To act as a second user (foreign-poll checks): insert another row into `users`, set `TEST_USER_USERNAME` to it, and restart the server.
+
+- **Dev self-check:** all 25 acceptance criteria met.
+  - Jest: server 107, client 153.
+  - Manual walkthrough in the running app at 360px, 375px and desktop:
+    - validation errors and focus
+    - adding and dragging options into a new order, then saving that order
+    - create, confirmation, reload
+    - unknown poll showing the load error
+    - discard dialog
+    - save failure with the API stopped, then retry
+    - limit-length content with RTL text, emoji and markup, with no horizontal scroll
+  - The 8-option limit, "Create another poll" and foreign-poll 404s are covered by unit and API tests only.
+
+- **What to test first:**
+  1. Drag to reorder on real touch devices (iOS Safari, Android Chrome). It is a hand-written Pointer Events hook, verified only with a mouse and in jsdom.
+  2. Double submit and retry-after-lost-response: one poll per `clientRequestId`, including parallel requests.
+  3. Foreign, missing and malformed poll IDs: the same 404 and the same UI.
+  4. Validation boundaries end to end: 200/1000/100 characters, 2 and 8 options, duplicates ignoring case and spaces, spaces-only input, line breaks, and unknown fields in the API body.
+  5. Markup and script in every text field, on both the form and the confirmation screen.
+
+- **QA round 1 fixes (2026-09-15):**
+  - One `fix:` commit per bug, each removing that bug's expected-to-fail marker: `00f5a65` BUG-01, `5b50154` BUG-02, `c020b9b` BUG-03, `e57d146` BUG-04, `3c904b9` BUG-05, `5865c34` BUG-06.
+  - Dev Test Audit fixes: `b73ddde`, `dd59a3b`, `fd88765`, `abb25bd`. Also `a7e092b` writes a combining accent in tests as an escape.
+  - Jest: server 187 (the 61 QA API tests all run normally now), client 169. The new usePoll, TextInput height and auto-scroll tests were checked to fail when the code they guard is broken.
+  - E2E not run by dev: `DATABASE_URL_E2E` is still missing from `server/.env` (captain chose to skip it this round).
+  - Retest first: pasting control characters, tabs, U+2028 and lone surrogates into each field (removed or turned into spaces, with no error shown); invisible-only questions and options; NFC look-alike options; emoji at the length limits through the API; field heights at 360px.
+
+- **Known limitations:**
+  - **No auth yet:** every request acts as the seeded test user, and guest blocking is deferred to Register and log in.
+  - **Drag-only reordering:** there is no keyboard or screen-reader reordering, so WCAG 2.5.7 and 2.1.1 fail for reordering. The captain accepted this.
+  - **No Nunito:** it isn't loaded, so the UI uses system fonts.
+  - **Design-system items D1–D6** from the /design review are deferred. They are updates to `specs/design/`, not code violations.
+  - **Double GET in development:** React StrictMode makes the confirmation screen request the poll twice. Production does not.
+  - **Slow failure on Windows:** with the API down, the save error appears after about 2.4s because Windows retries refused localhost connections.
+  - **npm audit:** 2 moderate `uuid` advisories come in through Sequelize. They don't affect how this code uses it.
+  - **Invisible-only details** are saved as entered; the captain's ruling covers the question and options only.
+
+---
+
+## QA Report
+
+**QA status:** Failed
+**Author:** /qa
+**Round:** 1
+**Last updated:** 2026-09-15
+
+### Test Strategy
+**Risk areas (highest first):**
+1. **Duplicate polls:** double submit, parallel creates, and a retry after a lost response.
+2. **Access and data leaks:** a foreign poll must return the same 404 as a missing one, a second user reusing another user's `clientRequestId` must never receive that user's poll, and clients must not be able to set fields like `creatorId` or `status`.
+3. **Input the validation misses:** null bytes, control characters, invisible-only text, Unicode look-alike duplicates, Unicode line breaks, lone surrogates, `__proto__` keys, the wrong content type, and UTF-16 limits with emoji.
+4. **Every acceptance criterion in a real browser**, at desktop and 360px.
+5. **UI states under failure:** a slow load, a 500, an aborted request, a lost response.
+6. **Stored XSS** in every text field.
+7. **Accessibility and responsiveness:** keyboard-only use, dialog focus, touch targets, 360px layout, 200% text size, reduced motion, automated WCAG scans.
+
+| Area / Case | Layer | Why this layer |
+|-------------|-------|----------------|
+| Access, mass assignment, odd input, response hygiene, data integrity, concurrency and idempotency | Supertest (`server/tests/qa/createPoll.test.js`) | Fully visible at the API; assertions query the database. |
+| Acceptance flows, exact UI copy, UI states (via `page.route`), lost-response retry, XSS rendering, drag reorder (mouse and touch), keyboard, 360px, 200% text, reduced motion, axe scans | Playwright (`e2e/createPoll.spec.js`), projects `chromium-desktop` and `mobile-360` | Needs a real browser. |
+
+**Not tested (and why):**
+- **Token and JWT attacks, guest deep links, session expiry:** no authentication exists yet (Register and log in is deferred).
+- **Invite links, voting, closed polls:** out of scope for this feature.
+- **Real phone hardware:** only emulated touch; the captain checks on a device by hand.
+- **Firefox and WebKit:** the required projects are Chromium only.
+- **Timing side channels and load:** beyond the MVP bar.
+- **Browser Back after creating:** the spec doesn't define the behavior, so it is observed and reported only.
+- **Parallel requests from two different users:** the test-user stand-in reads the acting user from an environment variable, so two users can't send requests at the same time. Covered sequentially instead.
+
+**Questions for the captain:**
+- **New test dependencies?** `@playwright/test` and `@axe-core/playwright` approved (2026-09-15).
+- **Which database for E2E?** A separate database via `DATABASE_URL_E2E` (2026-09-15).
+- **Invisible-only text, control characters, lone surrogates, NFC-equal duplicates?** All rejected with 400 "Invalid request"; the client shows the matching field error where it can (2026-09-15).
+
+### Dev Test Audit
+| Test file / area | Finding | Action |
+|------------------|---------|--------|
+| `Button`, `PageLayout`, `LandingPage`, `PollSummary`, `OptionListEditor`, `CreatePollPage`, `PollCreatedPage` tests (design fixes) | Assert CSS class names (implementation detail); a real visual regression would still pass. | Sent to dev: replace with behavior assertions. QA covers size and layout in E2E. |
+| `client/src/hooks/usePoll.test.js`, "does not update after unmounting" | Watches `console.error`, which React 18+ never emits here, so the test cannot fail. | Sent to dev. |
+| `useDragReorder` | Auto-scroll near viewport edges is handled in code but has no test. | Sent to dev. |
+| `server/tests/middleware/requireUser.test.js`, `server/tests/api/polls.test.js` | Restoring an unset `TEST_USER_USERNAME` stores the string `"undefined"`, which can leak state between tests. | Sent to dev (minor). |
+| `data-testid` usage | Only on decorative elements. | None. |
+| Server integration tests | Real database, body and database assertions, reset per test; 403 not applicable. | None. |
+
+### Tests Added
+- **Integration (Supertest):** `server/tests/qa/createPoll.test.js`, 61 cases.
+  - 47 adversarial cases: authorization and existence, odd input, idempotency and concurrency, response hygiene.
+  - 14 regression cases for BUG-01 to BUG-05, marked `test.failing`.
+- **E2E (Playwright):** `e2e/createPoll.spec.js`, 32 tests run in `chromium-desktop` and `mobile-360` (64 runs).
+  - Includes axe WCAG 2.2 AA scans.
+  - Includes regression tests for BUG-01 (UI) and BUG-06, marked `test.fail()`.
+- **How to run E2E:** add `DATABASE_URL_E2E` to `server/.env` (see `server/.env.example`), then run `cd e2e && npm install && npx playwright install chromium && npm test`.
+
+### Acceptance Criteria
+| # | Criterion | Result | Proven by (test) |
+|---|-----------|--------|------------------|
+| 1 | The app opens on the landing page. | Pass | E2E: the app opens on the landing page, and Create poll opens the form |
+| 2 | The landing page shows "Welcome", the intro text, and a "Create poll" button that opens the Create poll form. | Pass | E2E: the app opens on the landing page, and Create poll opens the form |
+| 3 | The form opens with an empty question, hidden details, Single choice selected, and exactly 2 empty options. | Pass | E2E: opens with an empty question, hidden details, Single choice, and exactly two empty options |
+| 4 | The Question field accepts at most 200 characters and shows a {count}/200 counter. | Pass | E2E: typed and pasted text is cut at 200, 1000, and 100 characters |
+| 5 | "Add details" shows a Details field that accepts at most 1000 characters and shows a {count}/1000 counter. | Pass | E2E: typed and pasted text is cut at 200, 1000, and 100 characters |
+| 6 | "Remove details" hides the Details field, and its text is not saved. | Pass | E2E: Remove details hides the details field and its text is not saved |
+| 7 | Each option accepts at most 100 characters and shows a {count}/100 counter. | Pass | E2E: typed and pasted text is cut at 200, 1000, and 100 characters |
+| 8 | "Add option" adds an empty option at the bottom and focuses it. | Pass | E2E: Add option focuses each new option up to 8 |
+| 9 | At 8 options, "Add option" is disabled and "You can add up to 8 options." is shown. | Pass | E2E: Add option focuses each new option up to 8, then is disabled with the limit hint |
+| 10 | Remove buttons appear only when there are more than 2 options; removing an option deletes it. | Pass | E2E: remove buttons appear only above two options |
+| 11 | Dragging an option by its handle moves it, and the new order is the order saved. | Pass | E2E: dragging an option by its handle (mouse on desktop, touch on mobile-360) |
+| 12 | An empty or spaces-only question shows "Enter a question." and saves nothing. | Pass | E2E: submitting an empty form; a spaces-only question and option count as empty. Invisible-only text is BUG-01. |
+| 13 | An empty or spaces-only option shows "Fill in this option or remove it." and saves nothing. | Pass | Same two E2E tests |
+| 14 | Options matching after trimming and ignoring case show "This option is already in the list." and save nothing. | Pass | E2E: options that match after trimming and ignoring case; API: Greek case variants. NFC look-alikes are BUG-03. |
+| 15 | After a failed submit, focus moves to the first invalid field, and each error clears when its field is valid. | Pass | E2E: focus moves to the first invalid field, and each error clears |
+| 16 | While saving, the button reads "Creating…" and the form cannot be edited or submitted again. | Pass | E2E: while saving, the button reads Creating… |
+| 17 | Repeated clicks on "Create poll" create exactly one poll. | Pass | E2E: same test (database count); API: 20 parallel creates with one clientRequestId |
+| 18 | If saving fails, the error is shown, all input is kept, and the form is editable again. | Pass | E2E: after a server error / a network failure; lost response retry |
+| 19 | A saved poll stores trimmed text, details or none, the answer type, trimmed options in order, the creator, and status Open. | Pass | E2E: a saved poll stores trimmed text; API: trimming, clientRequestId reuse by another user (creator) |
+| 20 | The confirmation shows "Poll created", the question, details, answer type, options in order, and "Open". | Pass | E2E: a saved poll stores trimmed text … and the confirmation shows it all |
+| 21 | "Back to home" opens the landing page; "Create another poll" opens an empty form. | Pass | E2E: Back to home opens the landing page and Create another poll opens an empty form |
+| 22 | Reloading the confirmation screen shows the same poll. | Pass | E2E: reloading the confirmation shows Loading poll… and then the same poll |
+| 23 | A missing or foreign poll shows "We couldn't load this poll." with "Back to home". | Pass | E2E: a poll that does not exist, belongs to another user, or has a malformed id; API: identical 404s |
+| 24 | "Cancel" returns to the landing page without saving. | Pass | E2E: Cancel on an untouched form; Discard returns to the landing page and saves nothing |
+| 25 | User-entered markup or script is displayed as plain text. | Pass | E2E: markup and script in every text field are shown as plain text and never run |
+
+### Bugs
+| ID | Severity | Title | Steps to reproduce | Expected (spec) | Actual | Regression test | Status |
+|----|----------|-------|--------------------|-----------------|--------|-----------------|--------|
+| BUG-01 | Major | Invisible-only question or option is accepted | Type or paste only zero-width spaces (U+200B) as the question, or send `question: "\u200B\u200B\u200B"` to `POST /api/polls`. | Treated as empty (captain, 2026-09-15): "Enter a question." or "Fill in this option or remove it."; the API returns 400 and nothing is saved. | 201; a poll with a blank-looking question or option is saved, from both the API and the form. | `server/tests/qa/createPoll.test.js` BUG-01 (3 cases); `e2e/createPoll.spec.js` BUG-01 | Open |
+| BUG-02 | Major | Null bytes, control characters, and lone surrogates are accepted and altered on save | Send `question: "Lunch\u0000?"` (or BEL, ESC, or a lone surrogate) to `POST /api/polls`. | Rejected with 400 "Invalid request"; nothing saved (captain, 2026-09-15). | 201. A null byte is stored as the two characters `\0`, so saved text differs from input. | `server/tests/qa/createPoll.test.js` BUG-02 (7 cases) | Open |
+| BUG-03 | Major | Options identical after Unicode normalization aren't flagged as duplicates | Create a poll with options `Café` (precomposed é) and `Café` (e plus a combining accent). | Duplicate error; the API returns 400 and nothing is saved (captain, 2026-09-15). Client validation must match. | 201; two visually identical options are saved. | `server/tests/qa/createPoll.test.js` BUG-03 | Open |
+| BUG-04 | Minor | Unicode line and paragraph separators are accepted in single-line fields | Send an option containing U+2028, or a question containing U+2029. | Line breaks rejected in question and options (approved plan decision). | 201; saved with the separator. | `server/tests/qa/createPoll.test.js` BUG-04 (2 cases) | Open |
+| BUG-05 | Minor | API counts length limits in code points, not UTF-16 units | Send a question of 101 emoji (202 UTF-16 units). | 400, because limits count UTF-16 units to match the form (approved plan decision). | 201; the API accepts text the form cannot produce. | `server/tests/qa/createPoll.test.js` BUG-05 | Open |
+| BUG-06 | Minor | Auto-growing text fields are 4px shorter than their content | Type into any form field and measure the field. | Fields fit their content, with 12px bottom padding (catalog `TextInput`). | Height excludes the 2px borders, so the content overflows by 4px and the visible bottom padding is 8px. No text is hidden. | `e2e/createPoll.spec.js` BUG-06 | Open |
+
+### Test Runs
+| Round | Date | Unit | Integration | E2E | Notes |
+|-------|------|------|-------------|-----|-------|
+| 1 | 2026-09-15 | Client 153 passed | Server dev tests 107 passed; QA 61 passed (14 expected-to-fail bug tests) | 64 passed across both projects (4 expected-to-fail bug tests) | See notes below. |
+
+Notes for round 1:
+- **Test-infrastructure failures, fixed in QA code:** earlier runs failed because of dev-server load (switched to a production build and 2 workers), two QA test mistakes (clicking an aria-disabled button, asserting transition duration), and an axe scan during the dialog fade-in. No app code was changed.
+- **One unexplained flake:** a server test failed once while E2E ran in parallel and passed on rerun; it was not reproduced.
+
+### Other observations (not bugs)
+- **Browser Back after creating** opens an empty Create poll form. The spec does not define this.
+- **Save timeout:** the client gives up on a save after 15 seconds and shows the save error. If the save actually succeeded, the idempotent retry recovers it without a duplicate.
+- **Unreachable API on Windows:** the save error appears after about 2.4 seconds, because Windows retries refused localhost connections.
+
+### Verdict
+**Failed.** Three Major bugs are open (BUG-01, BUG-02, BUG-03), so the spec is set back to `In Dev`.
+
+Next steps:
+- `/dev` fixes each bug on the feature branch with one `fix:` commit per bug, removing that bug's expected-to-fail marker, then sets the spec to `In QA` for round 2.
+- The Minor bugs (BUG-04, BUG-05, BUG-06) are for the captain to decide.
+- The Dev Test Audit findings are also for `/dev`.
