@@ -27,7 +27,10 @@ function errorHandler(err, req, res, next) {
   const context = requestContext(req);
 
   if (err instanceof AppError) {
-    logger.info({ ...context, status: err.status, reason: err.publicMessage }, 'Request rejected');
+    logger.info(
+      { ...context, status: err.status, reason: err.publicMessage, details: err.details },
+      'Request rejected',
+    );
     return res.status(err.status).json({ data: null, error: err.publicMessage });
   }
 

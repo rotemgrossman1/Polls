@@ -32,6 +32,20 @@ describe('errorHandler', () => {
     expect(res.json).toHaveBeenCalledWith({ data: null, error: 'Authentication required' });
   });
 
+  test('logs validation details without sending them to the client', () => {
+    const res = mockRes();
+    const err = Object.assign(new NotFoundError('Poll not found'), {
+      details: ['params.pollId: invalid_format'],
+    });
+    errorHandler(err, mockReq(), res, jest.fn());
+
+    expect(res.json).toHaveBeenCalledWith({ data: null, error: 'Poll not found' });
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({ details: ['params.pollId: invalid_format'] }),
+      'Request rejected',
+    );
+  });
+
   test('maps malformed JSON to 400', () => {
     const res = mockRes();
     const err = Object.assign(new Error('Unexpected token'), { type: 'entity.parse.failed' });
