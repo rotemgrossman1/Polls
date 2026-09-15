@@ -26,4 +26,11 @@ class NotFoundError extends AppError {
   }
 }
 
-module.exports = { AppError, BadRequestError, UnauthorizedError, NotFoundError };
+// Same response whether the poll is missing or belongs to someone else.
+class PollNotFoundError extends NotFoundError {
+  constructor() {
+    super('Poll not found');
+  }
+}
+
+module.exports = { AppError, BadRequestError, UnauthorizedError, NotFoundError, PollNotFoundError };
