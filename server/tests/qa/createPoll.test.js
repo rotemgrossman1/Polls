@@ -529,7 +529,7 @@ describe('QA: Create poll API (adversarial)', () => {
       await expectRejectedAndNothingSaved({ options });
     });
 
-    test.failing.each([
+    test.each([
       ['a right-to-left override inside an option', { options: ['Pizza', `abc${ch(0x202e)}def`] }],
       ['a left-to-right override in the question', { question: `Lunch${ch(0x202d)}?` }],
       ['a right-to-left isolate in the details', { details: `Context ${ch(0x2067)}here${ch(0x2069)}` }],

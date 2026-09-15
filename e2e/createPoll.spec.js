@@ -852,7 +852,6 @@ test.describe('regression tests for open bugs', () => {
   });
 
   test('BUG-09: a pasted direction-override character is removed from the field', async ({ page }) => {
-    test.fail(); // BUG-09
     await page.goto('/polls/new');
     await option(page, 1).click();
     await page.keyboard.insertText(`abc${ch(0x202e)}def`);

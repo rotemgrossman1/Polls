@@ -94,6 +94,13 @@ describe('createPollBody', () => {
     expect(parse(validBody({ options: [england, wales] })).success).toBe(true);
   });
 
+  test('keeps right-to-left marks, which are not direction overrides', () => {
+    const result = parse(validBody({ question: 'מה אוכלים\u200F?' }));
+
+    expect(result.success).toBe(true);
+    expect(result.data.question).toBe('מה אוכלים\u200F?');
+  });
+
   test('accepts multiple choice', () => {
     expect(parse(validBody({ answerType: 'multiple' })).success).toBe(true);
   });
@@ -157,6 +164,10 @@ describe('createPollBody', () => {
     ['options differing only in case and spaces', { options: ['Yes', ' yes'] }],
     ['options equal after Unicode normalization', { options: ['Café', 'CAFE\u0301'] }],
     ['options equal after ignoring invisible characters', { options: ['Yes', 'Y\u200BES'] }],
+    ['question with a right-to-left override', { question: 'Lunch\u202E?' }],
+    ['option with a left-to-right isolate', { options: ['Pizza', 'Su\u2066shi'] }],
+    ['details with a pop directional formatting character', { details: 'Context\u202C here' }],
+    ['question of only a left-to-right override', { question: '\u202D' }],
     ['non-string option', { options: ['Pizza', 42] }],
     ['options not an array', { options: 'Pizza,Sushi' }],
     ['invalid client request id', { clientRequestId: 'abc' }],

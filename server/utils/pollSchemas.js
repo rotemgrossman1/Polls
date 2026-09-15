@@ -23,6 +23,11 @@ const INVISIBLE_ANYWHERE = new RegExp(INVISIBLE_FORMAT, 'gu');
 const CONTROL_OR_LONE_SURROGATE = /[\p{Cc}\p{Cs}]/u;
 const DETAILS_CONTROL_OR_LONE_SURROGATE = /(?![\t\n\r])[\p{Cc}\p{Cs}]/u;
 
+// Direction embedding, override and isolate characters can disguise what text says, so they are
+// rejected. Right-to-left and left-to-right marks stay allowed.
+const DIRECTION_CONTROL = /[\u202A-\u202E\u2066-\u2069]/u;
+const noDirectionControl = (value) => !DIRECTION_CONTROL.test(value);
+
 // Length limits count UTF-16 units, like the form's maxLength (Zod's .max counts code points).
 const withinLength = (max) => (value) => value.length <= max;
 
@@ -30,6 +35,7 @@ const withinLength = (max) => (value) => value.length <= max;
 const singleLineText = (max) =>
   z
     .string()
+    .refine(noDirectionControl, { message: 'Must not contain direction controls' })
     .overwrite(trimText)
     .min(1)
     .refine(withinLength(max), { message: 'Too long' })
@@ -45,6 +51,7 @@ const createPollBody = z.strictObject({
   question: singleLineText(POLL_LIMITS.QUESTION_MAX_LENGTH),
   details: z
     .string()
+    .refine(noDirectionControl, { message: 'Must not contain direction controls' })
     .overwrite(trimText)
     .refine(withinLength(POLL_LIMITS.DETAILS_MAX_LENGTH), { message: 'Too long' })
     .refine((value) => !DETAILS_CONTROL_OR_LONE_SURROGATE.test(value), {

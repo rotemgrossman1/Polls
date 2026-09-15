@@ -9,8 +9,14 @@ describe('cleanText', () => {
     ['a C1 control character', 'Su\u009Bshi', 'Sushi'],
     ['a lone high surrogate', 'Lunch \uD800?', 'Lunch ?'],
     ['a lone low surrogate', 'Lunch \uDC00?', 'Lunch ?'],
+    ['a right-to-left override', 'abc\u202Edef', 'abcdef'],
+    ['left-to-right isolate characters', 'a\u2066b\u2069c', 'abc'],
   ])('removes %s', (label, input, expected) => {
     expect(cleanText(input)).toBe(expected);
+  });
+
+  test('keeps right-to-left marks', () => {
+    expect(cleanText('מה\u200F?')).toBe('מה\u200F?');
   });
 
   test('keeps tabs, line breaks, emoji, and right-to-left text', () => {
