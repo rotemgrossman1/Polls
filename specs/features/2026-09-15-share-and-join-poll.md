@@ -588,7 +588,7 @@ During Checkpoint 2 (2026-09-15):
 
 ## QA Report
 
-**QA status:** In Progress
+**QA status:** Passed
 **Author:** /qa
 **Round:** 1
 **Last updated:** 2026-09-15
@@ -679,4 +679,71 @@ During Checkpoint 2 (2026-09-15):
 |----|----------|-------|--------------------|-----------------|--------|-----------------|----------------------------------|
 | BUG-01 | Minor | Broken percent-encoding in an invite code returns 500 instead of the "Poll not found" 404 | `GET /api/invites/q7Kx2Wm%E0%A4%A`, or `POST` to `/api/invites/q7Kx2Wm%E0%A4%A/participants` with a valid body. | The same 404 "Poll not found" as any code that opens no poll (approved plan: "404 for missing, wrong-case, cut-off and malformed codes"; CLAUDE.md: semantically correct status codes). | 500 "Something went wrong", logged as an unhandled error. Express's router throws a `URIError` carrying status 400 while decoding the parameter, and `errorHandler` turns any non-`AppError` into a 500. The same happens on `/api/polls/:pollId` (pre-existing). No poll data or existence is revealed, and the app never sends such a request (codes are encoded before calling the API). | `server/tests/qa/shareAndJoinPoll.test.js` BUG-01 (2 cases, `test.failing`) | Open |
 
-Severity note: rated Minor because it can't be reached from the app, reveals nothing, and the body is generic. The severity table's Major examples include "wrong status code", so the captain may raise it to Major, which would send the feature back to dev.
+Severity note: rated Minor because it can't be reached from the app, reveals nothing, and the body is generic. The severity table's Major examples include "wrong status code", so the captain may raise it to Major, which would send the feature back to dev. The captain did not raise it, so it stays Minor (2026-09-15).
+
+### Acceptance Criteria
+"API" tests are in `server/tests/qa/shareAndJoinPoll.test.js`. "E2E" tests are in `e2e/shareAndJoinPoll.spec.js` and pass in `chromium-desktop` and `mobile-360`.
+
+| # | Criterion | Result | Proven by (test) |
+|---|-----------|--------|------------------|
+| 1 | Every poll has exactly one invite link, and it never changes. | Pass | API: the creator's invite code is the same when creating, on every later load, and it opens that poll. E2E: opening the share sheet again, and after a reload, shows the same link. Dev: invite codes are unique. |
+| 2 | The link is the app's address plus a short random code, without the poll ID. | Pass | E2E: the share sheet shows … the full invite link without the poll id. API: the same stable-code test (10 base62 characters, no poll ID). |
+| 3 | "Share poll" is the main action once loaded, with "Back to home" and "Create another poll" as secondary actions. | Pass | E2E: Share poll is the main action once the poll loads … |
+| 4 | "Share poll" is not shown while loading or on the load error. | Pass | E2E: same test (delayed load, missing poll) |
+| 5 | "Share poll" opens the sheet with its title, body, full link, "Copy" and "Done". | Pass | E2E: the share sheet shows the title, body, the full invite link … |
+| 6 | "Copy" copies the link, shows "Copied" for 2 seconds, and announces "Link copied". | Pass | E2E: Copy puts the invite link on the clipboard …; Copied shows for 2 seconds after the last tap (fake clock) |
+| 7 | If copying is blocked, the copy error is shown and the link text is selected. | Pass | E2E: when copying is blocked, the copy error is shown under the link and the link text is selected |
+| 8 | "Share link" is shown only when sharing is supported, with "Answer my poll here:" plus the link. | Pass | E2E: Share link opens the device share options with the spec text …; the share sheet shows … (hidden when unsupported) |
+| 9 | Canceling the device share options shows no error and keeps the sheet open. | Pass | E2E: same Share link test (AbortError) |
+| 10 | "Done", Close, Escape and a tap outside close the sheet, and focus returns to "Share poll". | Pass | E2E: Done, the close button, Escape and a tap outside close the sheet … |
+| 11 | Opening the sheet again, or after a reload, shows the same link. | Pass | E2E: opening the share sheet again, and after a reload, shows the same link |
+| 12 | Another user's confirmation screen shows the load error and no share sheet. | Pass | E2E: Share poll is the main action … or for another user's poll |
+| 13 | Polls created before this feature have a working invite link. | Pass | API: a poll inserted without an invite code, as polls were before this feature, gets a working link. Dev checked the migration backfill at Checkpoint 1. |
+| 14 | A valid link on a device that hasn't joined shows loading, then the invite with the nickname field and "Join poll". | Pass | E2E: a device that has not joined sees Loading poll…, then You're invited … |
+| 15 | The invite and joined screens show no options, results, other nicknames, creator username or poll ID. | Pass | E2E: the invite page and the joined screen never show answer options …. API: the invite never includes participants; responses never leak. |
+| 16 | A wrong, made-up, cut-off or differently-cased code shows "This link doesn't work" with no content or form. | Pass | E2E: every link that doesn't work shows the identical page …. API: links that open no poll (GET and POST). |
+| 17 | Every non-working link shows an identical page. | Pass | E2E: same test (identical page text, title, noindex). API: identical status, body and headers. The API returns 500 for broken percent-encoding (BUG-01, Minor); it reveals nothing and the app can't send it. |
+| 18 | A link with extra parameters or a trailing slash opens the right poll. | Pass | E2E: a link with tracking parameters, a trailing slash, or a fragment opens the right poll |
+| 19 | If the poll fails to load, the load error and "Try again" are shown, and "Try again" loads the poll. | Pass | E2E: after a server error / a network failure while loading … |
+| 20 | Invite pages are marked so search engines don't list them. | Pass | E2E: invite pages are marked noindex while loading, on the form, … and on a broken link. API: search engines are told not to list invite responses. |
+| 21 | The nickname field shows its label, placeholder, help text and {count}/20 counter. | Pass | E2E: the nickname field shows its label, placeholder, help text and counter … |
+| 22 | The field accepts at most 20 characters, and pasted text is cut at 20. | Pass | E2E: same test (typed, pasted, emoji not split). API: the limit is 20 UTF-16 units. |
+| 23 | An empty, spaces-only or invisible-only nickname shows "Enter a nickname.", focuses the field and saves nothing. | Pass | E2E: an empty / spaces-only / invisible-only nickname … (3 tests). API: blank-looking nicknames are rejected. |
+| 24 | A nickname already used in this poll (ignoring case, spaces and invisible characters) shows the taken error, keeps the text, focuses the field and saves nothing. | Pass | E2E: a nickname already used in this poll … shows the taken error …. API: nicknames that look the same are the same nickname (10 cases). |
+| 25 | Each nickname error clears as soon as the field could be valid. | Pass | E2E: the empty tests (the error stays for a space and clears for a letter) and the taken test (clears on change) |
+| 26 | The same nickname can be used in two polls. | Pass | E2E: the same nickname can join two different polls. API: the same nickname joining two polls in parallel. |
+| 27 | While joining, the button reads "Joining…" and the field and button are locked. | Pass | E2E: while joining, the button reads Joining… and the form is locked … |
+| 28 | Repeated clicks or Enter presses save exactly one participant. | Pass | E2E: same test (request count and database) |
+| 29 | If joining fails, the join error shows above the button, the nickname is kept, and the form is usable again. | Pass | E2E: after a server error / a network failure while joining …; if the join is saved but the response is lost … |
+| 30 | A saved participant stores the trimmed nickname and the poll it joined. | Pass | E2E: after joining, the joined screen shows the trimmed nickname … (database). API: look-alike tests check stored nicknames per poll; spaces around a 20-character nickname are trimmed. |
+| 31 | The joined screen shows "You're in, {nickname}", status, option count, question and details. | Pass | E2E: after joining, the joined screen shows … with focus on its heading |
+| 32 | Reloading or a new tab after joining shows the joined screen and saves no new participant. | Pass | E2E: reloading, or opening the link in a new tab, after joining … |
+| 33 | Joining in a second tab after the first saves nothing new and shows the first nickname. | Pass | E2E: with two tabs on the nickname form, joining in both saves only the first nickname … |
+| 34 | Two people submitting the same nickname at once: exactly one is saved. | Pass | API: 10 parallel joins with case, space and invisible variants of one nickname save exactly one participant. Dev: parallel joins. |
+| 35 | A registered user and the poll's creator can join through the link with nothing prefilled. | Pass | E2E: the poll's creator can open their own share link and join, with nothing prefilled; a different browser … (empty field). Until Register and log in ships, the creator is the only registered user. |
+| 36 | Markup or script in the question, details or nickname is shown as plain text. | Pass | E2E: markup and script in the question, details and nickname are shown as plain text and never run |
+
+### Test Runs
+| Round | Date | Unit | Integration | E2E | Notes |
+|-------|------|------|-------------|-----|-------|
+| 1 | 2026-09-15 | Client 331 passed | Server 427 passed: dev tests 250; QA Create poll 81; QA Share and join poll 96, including 2 expected-to-fail BUG-01 tests | 164 passed across both projects (Create poll 84, Share and join poll 80) | See notes below. |
+
+Notes for round 1:
+- **Handoff state:** the only failing test at handoff, the QA key list, now passes after adding `inviteCode`.
+- **Test-infrastructure failures, fixed in QA code:**
+  - The first E2E run had 10 failures. Traces showed every page load sending two identical API requests, because the E2E client was a development React build (see Tests Added). A delayed or failed "first" request then hit the ignored duplicate. The config now builds with `NODE_ENV=production`.
+  - Some "Loading poll…" timeouts and 2 API test flakes happened only while jest and Playwright ran at the same time. Both suites pass when run one after the other.
+- **QA test mistakes fixed before committing:**
+  - A valid-format unknown code with an invalid body returns 400, the same as the real code, so it reveals nothing. The test now compares against the real code.
+  - `X-Robots-Tag` isn't expected on body-parser rejections (see Tests Added).
+- **Exploration** (Back and Forward, which the spec doesn't define; observed only):
+  - Joining adds no history entry. Back after joining returns to the page before the invite link, and Forward shows the joined screen again from device memory, with no second join request.
+  - The creator opening their own link in a browser that already joined sees the joined screen, and Back returns to the confirmation screen.
+  - No issues found.
+
+### Verdict
+**Passed.** All 36 acceptance criteria pass, and the full suite passes (unit, integration, E2E in both projects). There are no open Blocker or Major bugs.
+
+**Next step:** the captain decides on the open Minor bug BUG-01 (fix now or later) and sets the spec to `Done`.
+
+Minor items for dev from the Dev Test Audit (not blocking): replace class-name assertions with behavior assertions, and add body and DB checks to the status-only API test.
