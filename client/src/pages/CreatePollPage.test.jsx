@@ -52,7 +52,8 @@ describe('CreatePollPage', () => {
   test('opens with an empty question, hidden details, Single choice, and two empty options', () => {
     renderPage();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Create a poll' })).toBeInTheDocument();
+    // Page headings use the preview's heading size, not the hero size.
+    expect(screen.getByRole('heading', { level: 1, name: 'Create a poll' })).toHaveClass('text-2xl');
     expect(question()).toHaveValue('');
     expect(question()).toHaveAttribute('placeholder', 'What do you want to ask?');
     expect(question()).toHaveAttribute('maxLength', '200');

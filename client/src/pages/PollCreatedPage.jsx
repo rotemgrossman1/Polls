@@ -74,7 +74,7 @@ export default function PollCreatedPage() {
     <PageLayout bottomBar={bottomBar}>
       <div className="flex flex-col items-start gap-3">
         <SuccessMark />
-        <h1 className="text-3xl font-bold leading-tight text-text">{COPY.confirmation.heading}</h1>
+        <h1 className="break-words text-2xl font-bold leading-tight text-text">{COPY.confirmation.heading}</h1>
         <p className="text-base text-text-muted">{COPY.confirmation.intro}</p>
       </div>
       <PollSummary poll={poll} />

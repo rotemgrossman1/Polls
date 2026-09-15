@@ -82,7 +82,7 @@ export default function CreatePollPage() {
 
   return (
     <PageLayout bottomBar={bottomBar}>
-      <h1 className="text-3xl font-bold leading-tight text-text">{COPY.form.heading}</h1>
+      <h1 className="break-words text-2xl font-bold leading-tight text-text">{COPY.form.heading}</h1>
       <form id={FORM_ID} noValidate onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-4 rounded-lg border border-text bg-action-subtle p-5 shadow-md">
           <TextInput
