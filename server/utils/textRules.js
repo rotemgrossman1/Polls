@@ -3,7 +3,7 @@ const { z } = require('zod');
 // Text rules shared by every user-entered field (poll question, details, options, nickname).
 
 // Line breaks, including the Unicode line and paragraph separators.
-const LINE_BREAK = /[\r\n  ]/;
+const LINE_BREAK = /[\r\n\u2028\u2029]/;
 
 // Only whitespace and invisible characters (zero-width spaces, joiners, BOM): counts as empty.
 const BLANK = /^[\p{White_Space}\p{Default_Ignorable_Code_Point}]*$/u;
@@ -28,7 +28,7 @@ const hasMultilineControl = (value) => MULTILINE_CONTROL_OR_LONE_SURROGATE.test(
 
 // Direction embedding, override and isolate characters can disguise what text says, so they are
 // rejected. Right-to-left and left-to-right marks stay allowed.
-const DIRECTION_CONTROL = /[‪-‮⁦-⁩]/u;
+const DIRECTION_CONTROL = /[\u202A-\u202E\u2066-\u2069]/u;
 const noDirectionControl = (value) => !DIRECTION_CONTROL.test(value);
 
 // Length limits count UTF-16 units, like the form's maxLength (Zod's .max counts code points).
