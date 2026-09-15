@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import Alert from '../components/Alert';
 import AnswerTypeSelector from '../components/AnswerTypeSelector';
 import Button from '../components/Button';
+import ConfirmDialog from '../components/ConfirmDialog';
 import OptionListEditor from '../components/OptionListEditor';
 import PageLayout from '../components/PageLayout';
 import TextInput from '../components/TextInput';
@@ -11,6 +12,7 @@ import { COPY } from '../utils/uiCopy';
 import { POLL_LIMITS } from '../utils/pollRules';
 import { ROUTES, pollCreatedPath } from '../utils/routes';
 import { firstInvalidField } from '../utils/pollValidation';
+import { hasUserInput } from '../utils/pollForm';
 
 const FORM_ID = 'create-poll-form';
 
@@ -19,6 +21,7 @@ export default function CreatePollPage() {
   const form = useCreatePollForm({
     onCreated: (poll) => navigate(pollCreatedPath(poll.id), { state: { poll } }),
   });
+  const [discardOpen, setDiscardOpen] = useState(false);
 
   const questionRef = useRef(null);
   const detailsRef = useRef(null);
@@ -57,8 +60,13 @@ export default function CreatePollPage() {
     }
   }
 
+  // Cancel asks before discarding anything the user entered.
   function handleCancel() {
-    navigate(ROUTES.home);
+    if (hasUserInput(form)) {
+      setDiscardOpen(true);
+    } else {
+      navigate(ROUTES.home);
+    }
   }
 
   const bottomBar = (
@@ -141,6 +149,16 @@ export default function CreatePollPage() {
 
         {form.saveFailed && <Alert>{COPY.errors.saveFailed}</Alert>}
       </form>
+
+      <ConfirmDialog
+        open={discardOpen}
+        title={COPY.discardDialog.title}
+        body={COPY.discardDialog.body}
+        confirmLabel={COPY.discardDialog.discard}
+        cancelLabel={COPY.discardDialog.keepEditing}
+        onConfirm={() => navigate(ROUTES.home)}
+        onCancel={() => setDiscardOpen(false)}
+      />
     </PageLayout>
   );
 }

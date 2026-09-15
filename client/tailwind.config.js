@@ -139,9 +139,14 @@ module.exports = {
           from: { opacity: '1' },
           to: { opacity: '0.5' },
         },
+        'dialog-in': {
+          from: { opacity: '0', transform: `translateY(${token('space-4')})` },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'skeleton-pulse': `skeleton-pulse 1.4s ${token('ease-standard')} infinite alternate`,
+        'dialog-in': `dialog-in ${token('duration-base')} ${token('ease-standard')}`,
         'spin-slow': 'spin 2s linear infinite',
       },
     },

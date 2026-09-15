@@ -188,13 +188,55 @@ describe('CreatePollPage', () => {
     expect(question()).not.toHaveAttribute('readonly');
   });
 
-  test('Cancel on an untouched form returns to the landing page without saving', async () => {
+  test('Cancel on an untouched form returns to the landing page without asking or saving', async () => {
     renderPage();
 
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(screen.getByText('Landing page')).toBeInTheDocument();
     expect(createPoll).not.toHaveBeenCalled();
+  });
+
+  test('Cancel with input asks first; Keep editing keeps everything', async () => {
+    renderPage();
+    await userEvent.type(question(), 'Lunch?');
+    await userEvent.type(option(1), 'Pizza');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    const dialog = screen.getByRole('alertdialog', { name: 'Discard this poll?' });
+    expect(dialog).toHaveAccessibleDescription("What you've entered will be lost.");
+    expect(screen.getByRole('button', { name: 'Keep editing' })).toHaveFocus();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(question()).toHaveValue('Lunch?');
+    expect(option(1)).toHaveValue('Pizza');
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+  });
+
+  test('Discard returns to the landing page without saving', async () => {
+    renderPage();
+    await userEvent.click(screen.getByRole('radio', { name: /Multiple choice/ }));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+    expect(screen.getByText('Landing page')).toBeInTheDocument();
+    expect(createPoll).not.toHaveBeenCalled();
+  });
+
+  test('Escape in the discard dialog keeps editing', async () => {
+    renderPage();
+    await userEvent.type(question(), 'Lunch?');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await userEvent.keyboard('{Escape}');
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(question()).toHaveValue('Lunch?');
   });
 
   test('pasted text longer than the limit is cut at the limit', async () => {
