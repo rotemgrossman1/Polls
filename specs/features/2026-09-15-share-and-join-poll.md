@@ -1,6 +1,6 @@
 # Feature: Share and join poll
 
-**Status:** In Dev
+**Status:** In QA
 **Created:** 2026-09-15
 **Last updated:** 2026-09-15
 
@@ -557,4 +557,29 @@ During Checkpoint 2 (2026-09-15):
 - **For `/design`** (dev does not edit the catalog): none so far.
 
 ### Handoff Notes
-Filled in at hand off.
+- **Branch:** `feature/2026-09-15-share-and-join-poll` (local, not pushed). Captain's `/design` UI review on 2026-09-15 reported no violations.
+- **How to run:**
+  - `server/.env` exists. `client/.env` does not: copy `client/.env.example` to `client/.env` (`VITE_API_URL=http://localhost:3000/api`).
+  - No new env vars in this feature.
+  - `server/`: `npm install`, `npm run db:migrate` (adds `polls.invite_code` with backfill and the `participants` table), `npm run db:migrate:test`, `npm run db:seed` (fixed test user), `npm run dev` (port 3000).
+  - `client/`: `npm install`, `npm run dev` (port 5173).
+  - Tests: `npm test` in `server/` and `client/`.
+- **Test results at hand off:**
+  - Client: 331 of 331 pass (35 suites).
+  - Server: 330 of 331 pass. The only failure is `server/tests/qa/createPoll.test.js` › "success responses expose only the poll fields, never creator or request ids". The poll DTO now includes `inviteCode`, and `/qa` adds it to that key list (Checkpoint 1 decision).
+  - The production Vite build passes.
+- **What to test first:**
+  - Create a poll, then "Share poll": Copy ("Copied" for 2 seconds), Done/Escape/scrim with focus return, and the same link after a reload.
+  - Open the link in a new tab, join, reload, then join again in a second tab that still shows the form.
+  - Bad links: wrong case, cut off, made up, `/i`, `/i/a/b`. All must look identical in the UI and in the API (`GET /api/invites/:inviteCode` 404 body and headers).
+  - Nickname uniqueness through the API: case, surrounding spaces, invisible characters, and parallel joins with the same nickname or the same `joinKey`.
+  - Stop the API during load and during join to see the load-failed and join-failed states.
+- **Endpoints:** `GET /api/invites/:inviteCode` and `POST /api/invites/:inviteCode/participants` with body `{ nickname, joinKey }`. Both are public (no test user needed) and send `X-Robots-Tag: noindex`. POST returns 201 on a new join, 200 on a `joinKey` replay (original nickname), 409 for a taken nickname, 400 for validation, 404 for a code that opens no poll, and 413 for an oversized body.
+- **Known limitations** (see Risks & Open Questions):
+  - No rate limiting on the public invite endpoints.
+  - Stale device memory: the joined screen trusts localStorage without a server check.
+  - An invite code change inside the app without a page load would not reset `useJoinPoll` (nothing navigates between invite links today).
+  - A tab opened before a join in another tab shows the form until its next submit.
+  - Deploy: Render's static site needs an SPA rewrite so `/i/*` serves `index.html`.
+  - The QA key-list test above fails until `/qa` adds `inviteCode`.
+  - Closed polls are not blocked from joining (deferred to Close poll).
