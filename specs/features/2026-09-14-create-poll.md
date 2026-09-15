@@ -1,6 +1,6 @@
 # Feature: Create poll
 
-**Status:** In Dev
+**Status:** In QA
 **Created:** 2026-09-14
 **Last updated:** 2026-09-14
 
@@ -270,6 +270,9 @@ Files at the server root: `server/app.js` (exports the app for Supertest) and `s
 - **Spaces-only or leading/trailing spaces:** trimmed in client validation and in Zod before saving. Text made only of whitespace and invisible characters (zero-width spaces, joiners, BOM) counts as empty on both sides.
 - **Case or space duplicates:** trim + lowercase + NFC comparison on both client and server.
 - **Control characters and lone surrogates:** rejected by Zod; the form removes them as typed or pasted, and single-line fields turn tabs into spaces.
+- **Invisible characters at the edges:** trimmed like spaces. Options that differ only by invisible characters are duplicates.
+- **Direction-override characters:** rejected by Zod and removed by the form. After the form cleans pasted text, the caret stays right after it.
+- **Window width changes (rotating a phone):** text fields fit their content again.
 - **Pasting past the limit:** native `maxLength` cuts pasted text (UTF-16 counting, matched by Zod); the counter shows the maximum and the at-limit style.
 - **Max-length content at 360px:** `break-words` / `overflow-wrap:anywhere`, auto-grow textareas, no truncation, `whitespace-pre-wrap` for details.
 - **RTL and emoji:** `dir="auto"` on inputs and displayed user text; UTF-8 end to end.
@@ -365,6 +368,12 @@ All made by the captain on 2026-09-14 unless marked as a dev proposal in this pl
   - BUG-05: text limits use a `.length` refine (UTF-16 units) instead of Zod `.max`, which counts code points in Zod 4.
   - BUG-06: auto-grow height is `scrollHeight` plus the border width (`offsetHeight - clientHeight`).
   - Dev Test Audit: CSS-only class assertions removed (behavior checks kept); the `usePoll` unmount test replaced by a late-response test; a drag auto-scroll test added; tests delete `TEST_USER_USERNAME` when it was unset.
+- **QA round 2 fixes (captain, 2026-09-15):** the captain answered the round 2 questions and asked to finish the feature, so all five bugs are fixed.
+  - BUG-07: text is trimmed of leading and trailing whitespace and invisible format characters (Zod `.overwrite(trimText)` instead of `.trim()`). Variation selectors and tag characters are kept, because they belong to the emoji before them (hearts, flags). Details that end up blank are saved as null.
+  - BUG-08: the option duplicate check also removes invisible format characters, with the same exceptions, in `pollSchemas.js` and in the client's new `utils/textRules.js`.
+  - BUG-09: direction embedding, override and isolate characters (U+202A to U+202E, U+2066 to U+2069) are rejected by the API and removed by the form, like control characters. Right-to-left and left-to-right marks stay allowed.
+  - BUG-10: `TextInput` cleans text in a native `beforeinput` listener and inserts the cleaned text with `document.execCommand('insertText')`, so the browser keeps the caret. `handleChange` still cleans anything that arrives another way, such as an emoji cut in half by `maxLength`.
+  - BUG-11: `TextInput` fits its height again when a `ResizeObserver` reports a width change.
 
 ### Risks & Open Questions
 - **For `/design` (dev does not edit the catalog):** remove Move up/down from `OptionEditorRow` / `OptionListEditor` and the live-region announcement; NavBar shows no user yet; the Nunito and icon deferred decisions are resolved as "no package"; the brief and catalog are still `Draft`.
@@ -417,6 +426,8 @@ Filled in at hand off, for `/qa` (2026-09-15).
   - E2E not run by dev: `DATABASE_URL_E2E` is still missing from `server/.env` (captain chose to skip it this round).
   - Retest first: pasting control characters, tabs, U+2028 and lone surrogates into each field (removed or turned into spaces, with no error shown); invisible-only questions and options; NFC look-alike options; emoji at the length limits through the API; field heights at 360px.
 
+- **QA round 2 fixes (2026-09-15):** BUG-07 to BUG-11 are fixed, one `fix:` commit each, with their expected-to-fail markers removed. Retest first: the caret and undo after pasting text the form cleans, rotating a phone with long text, flags and heart emoji as options, and Hebrew text with right-to-left marks.
+
 - **Known limitations:**
   - **No auth yet:** every request acts as the seeded test user, and guest blocking is deferred to Register and log in.
   - **Drag-only reordering:** there is no keyboard or screen-reader reordering, so WCAG 2.5.7 and 2.1.1 fail for reordering. The captain accepted this.
@@ -425,7 +436,7 @@ Filled in at hand off, for `/qa` (2026-09-15).
   - **Double GET in development:** React StrictMode makes the confirmation screen request the poll twice. Production does not.
   - **Slow failure on Windows:** with the API down, the save error appears after about 2.4s because Windows retries refused localhost connections.
   - **npm audit:** 2 moderate `uuid` advisories come in through Sequelize. They don't affect how this code uses it.
-  - **Invisible-only details** are saved as entered; the captain's ruling covers the question and options only.
+  - **Text size changes after the form has loaded** don't make text fields fit again unless the field width also changes.
 
 ---
 
