@@ -74,7 +74,7 @@ export default function OptionEditorRow({
             aria-label={COPY.form.dragHandleLabel(number)}
             disabled={locked}
             className={`${ICON_BUTTON} touch-none select-none text-text disabled:cursor-not-allowed disabled:text-border-strong ${
-              isDragging ? 'cursor-grabbing bg-action-subtle' : 'cursor-grab'
+              isDragging ? 'cursor-grabbing bg-action-subtle' : 'cursor-grab enabled:hover:bg-bg'
             }`}
             {...handleProps}
           >
