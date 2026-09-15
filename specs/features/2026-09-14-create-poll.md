@@ -1,6 +1,6 @@
 # Feature: Create poll
 
-**Status:** In Dev
+**Status:** In QA
 **Created:** 2026-09-14
 **Last updated:** 2026-09-14
 
@@ -363,8 +363,48 @@ All made by the captain on 2026-09-14 unless marked as a dev proposal in this pl
 - **Local setup:** the captain provides DB credentials in `server/.env` and creates the dev and test databases (or approves me running `createdb`).
 
 ### Handoff Notes
-Filled in at hand off, for `/qa`.
-- Branch:
-- How to run (setup, seed data, env vars):
-- What to test first:
-- Known limitations:
+Filled in at hand off, for `/qa` (2026-09-15).
+
+- **Branch:** `feature/2026-09-14-create-poll` (PR rotemgrossman1/Polls#2).
+
+- **How to run:**
+  1. PostgreSQL: create a dev database and a separate test database.
+  2. `server/.env` from `server/.env.example`:
+     - `DATABASE_URL` and `DATABASE_URL_TEST` (the two must differ)
+     - `TEST_USER_USERNAME` (e.g. `test-user`)
+     - `CLIENT_URL=http://localhost:5173`
+     - `PORT=3000`
+  3. `cd server && npm install && npm run db:migrate && npm run db:seed && npm run dev`
+  4. `client/.env` from `client/.env.example`: `VITE_API_URL=http://localhost:3000/api`.
+  5. `cd client && npm install && npm run dev`, then open http://localhost:5173.
+  6. Tests: `npm test` in `server/` (migrates the test database automatically) and in `client/`.
+  7. To act as a second user (foreign-poll checks): insert another row into `users`, set `TEST_USER_USERNAME` to it, and restart the server.
+
+- **Dev self-check:** all 25 acceptance criteria met.
+  - Jest: server 107, client 153.
+  - Manual walkthrough in the running app at 360px, 375px and desktop:
+    - validation errors and focus
+    - adding and dragging options into a new order, then saving that order
+    - create, confirmation, reload
+    - unknown poll showing the load error
+    - discard dialog
+    - save failure with the API stopped, then retry
+    - limit-length content with RTL text, emoji and markup, with no horizontal scroll
+  - The 8-option limit, "Create another poll" and foreign-poll 404s are covered by unit and API tests only.
+
+- **What to test first:**
+  1. Drag to reorder on real touch devices (iOS Safari, Android Chrome). It is a hand-written Pointer Events hook, verified only with a mouse and in jsdom.
+  2. Double submit and retry-after-lost-response: one poll per `clientRequestId`, including parallel requests.
+  3. Foreign, missing and malformed poll IDs: the same 404 and the same UI.
+  4. Validation boundaries end to end: 200/1000/100 characters, 2 and 8 options, duplicates ignoring case and spaces, spaces-only input, line breaks, and unknown fields in the API body.
+  5. Markup and script in every text field, on both the form and the confirmation screen.
+
+- **Known limitations:**
+  - **No auth yet:** every request acts as the seeded test user, and guest blocking is deferred to Register and log in.
+  - **Drag-only reordering:** there is no keyboard or screen-reader reordering, so WCAG 2.5.7 and 2.1.1 fail for reordering. The captain accepted this.
+  - **No Nunito:** it isn't loaded, so the UI uses system fonts.
+  - **Design-system items D1–D6** from the /design review are deferred. They are updates to `specs/design/`, not code violations.
+  - **Double GET in development:** React StrictMode makes the confirmation screen request the poll twice. Production does not.
+  - **Slow failure on Windows:** with the API down, the save error appears after about 2.4s because Windows retries refused localhost connections.
+  - **npm audit:** 2 moderate `uuid` advisories come in through Sequelize. They don't affect how this code uses it.
+  - **No Playwright yet:** `e2e/` and `server/tests/qa/` don't exist yet; /qa owns them.
