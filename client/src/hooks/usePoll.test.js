@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import usePoll from './usePoll';
 import { getPoll } from '../services/pollService';
 
@@ -42,21 +42,27 @@ describe('usePoll', () => {
     await waitFor(() => expect(result.current).toEqual({ data: null, loading: false, error }));
   });
 
-  test('does not update after unmounting', async () => {
-    let resolve;
-    getPoll.mockReturnValue(
-      new Promise((res) => {
-        resolve = res;
-      }),
+  test('ignores a late response for a previous poll id', async () => {
+    const OTHER = { id: 'poll-2', question: 'Dinner?', options: [] };
+    let resolveFirst;
+    getPoll.mockImplementation((pollId) =>
+      pollId === 'poll-1'
+        ? new Promise((resolve) => {
+            resolveFirst = resolve;
+          })
+        : Promise.resolve(OTHER),
     );
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    const { unmount } = renderHook(() => usePoll('poll-1', null));
-    unmount();
-    resolve(POLL);
-    await Promise.resolve();
+    const { result, rerender } = renderHook(({ pollId }) => usePoll(pollId, null), {
+      initialProps: { pollId: 'poll-1' },
+    });
+    rerender({ pollId: 'poll-2' });
+    await waitFor(() => expect(result.current.data).toEqual(OTHER));
 
-    expect(errorSpy).not.toHaveBeenCalled();
-    errorSpy.mockRestore();
+    await act(async () => {
+      resolveFirst(POLL);
+    });
+
+    expect(result.current).toEqual({ data: OTHER, loading: false, error: null });
   });
 });
