@@ -59,6 +59,11 @@ describe('OptionListEditor', () => {
     expect(optionField(2)).toHaveAttribute('placeholder', 'Option 2');
     expect(screen.getByRole('button', { name: 'Drag to reorder option 1' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Drag to reorder option 2' })).toBeInTheDocument();
+    // The grip is drawn as filled dots, not hairline strokes.
+    const grip = screen.getByRole('button', { name: 'Drag to reorder option 1' }).querySelector('svg');
+    expect(grip).toHaveAttribute('fill', 'currentColor');
+    expect(grip).toHaveAttribute('stroke', 'none');
+    expect(grip).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getAllByText('0/100')).toHaveLength(2);
     expect(screen.queryByRole('button', { name: /Remove option/ })).not.toBeInTheDocument();
   });

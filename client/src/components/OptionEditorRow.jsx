@@ -13,18 +13,20 @@ const ERROR_COPY = {
   [FIELD_ERROR.DUPLICATE]: COPY.errors.optionDuplicate,
 };
 
-function Icon({ path }) {
+// Outline icons are stroked; `filled` icons (the grip dots) are filled shapes.
+function Icon({ path, filled = false }) {
+  const paint = filled
+    ? { fill: 'currentColor', stroke: 'none' }
+    : {
+        fill: 'none',
+        stroke: 'currentColor',
+        strokeWidth: ICON_STROKE_WIDTH,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+      };
+
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={ICON_STROKE_WIDTH}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-5 w-5"
-    >
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" {...paint}>
       <path d={path} />
     </svg>
   );
@@ -76,7 +78,7 @@ export default function OptionEditorRow({
             }`}
             {...handleProps}
           >
-            <Icon path={ICON_PATHS.grip} />
+            <Icon path={ICON_PATHS.grip} filled />
           </button>
           <label
             htmlFor={fieldId}
