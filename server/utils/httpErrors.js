@@ -33,4 +33,25 @@ class PollNotFoundError extends NotFoundError {
   }
 }
 
-module.exports = { AppError, BadRequestError, UnauthorizedError, NotFoundError, PollNotFoundError };
+class ConflictError extends AppError {
+  constructor(message = 'Conflict') {
+    super(409, message);
+  }
+}
+
+// Someone already joined this poll with the same nickname, ignoring case and invisible characters.
+class NicknameTakenError extends ConflictError {
+  constructor() {
+    super('Nickname taken');
+  }
+}
+
+module.exports = {
+  AppError,
+  BadRequestError,
+  UnauthorizedError,
+  NotFoundError,
+  PollNotFoundError,
+  ConflictError,
+  NicknameTakenError,
+};
