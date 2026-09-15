@@ -1,6 +1,6 @@
 # Feature: Create poll
 
-**Status:** In QA
+**Status:** Done
 **Created:** 2026-09-14
 **Last updated:** 2026-09-14
 
@@ -442,9 +442,9 @@ Filled in at hand off, for `/qa` (2026-09-15).
 
 ## QA Report
 
-**QA status:** Failed
+**QA status:** Passed
 **Author:** /qa
-**Round:** 2
+**Round:** 3
 **Last updated:** 2026-09-15
 
 ### Test Strategy
@@ -556,6 +556,7 @@ Not tested in round 2:
 | 25 | User-entered markup or script is displayed as plain text. | Pass | E2E: markup and script in every text field are shown as plain text and never run |
 
 Round 2: all 25 criteria still pass in the full suite. BUG-01 and BUG-03 (rows 12 and 14) are verified; invisible look-alike duplicates are BUG-08.
+Round 3: all 25 criteria pass in the full suite (server 217, client 183, E2E 84 across both projects).
 
 ### Bugs
 | ID | Severity | Title | Steps to reproduce | Expected (spec) | Actual | Regression test | Status |
@@ -566,17 +567,18 @@ Round 2: all 25 criteria still pass in the full suite. BUG-01 and BUG-03 (rows 1
 | BUG-04 | Minor | Unicode line and paragraph separators are accepted in single-line fields | Send an option containing U+2028, or a question containing U+2029. | Line breaks rejected in question and options (approved plan decision). | 201; saved with the separator. | `server/tests/qa/createPoll.test.js` BUG-04 (2 cases) | Verified (round 2) |
 | BUG-05 | Minor | API counts length limits in code points, not UTF-16 units | Send a question of 101 emoji (202 UTF-16 units). | 400, because limits count UTF-16 units to match the form (approved plan decision). | 201; the API accepts text the form cannot produce. | `server/tests/qa/createPoll.test.js` BUG-05 | Verified (round 2) |
 | BUG-06 | Minor | Auto-growing text fields are 4px shorter than their content | Type into any form field and measure the field. | Fields fit their content, with 12px bottom padding (catalog `TextInput`). | Height excludes the 2px borders, so the content overflows by 4px and the visible bottom padding is 8px. No text is hidden. | `e2e/createPoll.spec.js` BUG-06 | Verified (round 2) |
-| BUG-07 | Minor | Invisible characters at the edges of text are not trimmed | Send `question` as U+200B + " Lunch? " + U+2060, or `details` of only U+200B, to `POST /api/polls`. | Leading and trailing invisible characters are trimmed like spaces (captain, round 2); details left empty are saved as none. | 201; the text is saved with the invisible characters, and invisible-only details are saved as text. | `server/tests/qa/createPoll.test.js` BUG-07 (2 cases) | Open |
-| BUG-08 | Major | Options that differ only by invisible characters are not duplicates | Create a poll with options `Yes` and `Y` + U+200B + `es`, in the form or through the API. | "This option is already in the list."; the API returns 400 and nothing is saved (captain, round 2). | 201; two identical-looking options are saved. | `server/tests/qa/createPoll.test.js` BUG-08 (2 cases); `e2e/createPoll.spec.js` BUG-08 | Open |
-| BUG-09 | Major | Direction-override characters are accepted | Send an option `abc` + U+202E + `def` (it displays as "abcfed"), or U+202D or U+2066 to U+2069 in any field. | Rejected with 400 (captain, round 2); the form removes them as typed or pasted, like control characters (BUG-02 decision). | 201; the saved option displays reversed, which can disguise what an option says. | `server/tests/qa/createPoll.test.js` BUG-09 (3 cases); `e2e/createPoll.spec.js` BUG-09 | Open |
-| BUG-10 | Minor | The caret jumps to the end after pasting text the form cleans | In the question "Lunch today?", put the caret after "Lunch", paste " at" + tab + "noon", then type "X". The same happens in details with a control character. | The caret stays right after the pasted text (captain, round 2): "Lunch at noonX today?". | "Lunch at noon today?X". | `e2e/createPoll.spec.js` BUG-10 | Open |
-| BUG-11 | Major | Text fields don't fit their content again after the window gets narrower | At 1024px wide, enter a long question and option, then narrow the window to 360px (as when rotating a phone). | Text shows in full at phone width, with no truncation (spec Edge Cases). | Fields keep the wide-window height, so up to 79px of the question is hidden (fields don't scroll) until the user types. | `e2e/createPoll.spec.js` BUG-11 | Open |
+| BUG-07 | Minor | Invisible characters at the edges of text are not trimmed | Send `question` as U+200B + " Lunch? " + U+2060, or `details` of only U+200B, to `POST /api/polls`. | Leading and trailing invisible characters are trimmed like spaces (captain, round 2); details left empty are saved as none. | 201; the text is saved with the invisible characters, and invisible-only details are saved as text. | `server/tests/qa/createPoll.test.js` BUG-07 (2 cases) | Verified (round 3) |
+| BUG-08 | Major | Options that differ only by invisible characters are not duplicates | Create a poll with options `Yes` and `Y` + U+200B + `es`, in the form or through the API. | "This option is already in the list."; the API returns 400 and nothing is saved (captain, round 2). | 201; two identical-looking options are saved. | `server/tests/qa/createPoll.test.js` BUG-08 (2 cases); `e2e/createPoll.spec.js` BUG-08 | Verified (round 3) |
+| BUG-09 | Major | Direction-override characters are accepted | Send an option `abc` + U+202E + `def` (it displays as "abcfed"), or U+202D or U+2066 to U+2069 in any field. | Rejected with 400 (captain, round 2); the form removes them as typed or pasted, like control characters (BUG-02 decision). | 201; the saved option displays reversed, which can disguise what an option says. | `server/tests/qa/createPoll.test.js` BUG-09 (3 cases); `e2e/createPoll.spec.js` BUG-09 | Verified (round 3) |
+| BUG-10 | Minor | The caret jumps to the end after pasting text the form cleans | In the question "Lunch today?", put the caret after "Lunch", paste " at" + tab + "noon", then type "X". The same happens in details with a control character. | The caret stays right after the pasted text (captain, round 2): "Lunch at noonX today?". | "Lunch at noon today?X". | `e2e/createPoll.spec.js` BUG-10 | Verified (round 3) |
+| BUG-11 | Major | Text fields don't fit their content again after the window gets narrower | At 1024px wide, enter a long question and option, then narrow the window to 360px (as when rotating a phone). | Text shows in full at phone width, with no truncation (spec Edge Cases). | Fields keep the wide-window height, so up to 79px of the question is hidden (fields don't scroll) until the user types. | `e2e/createPoll.spec.js` BUG-11 | Verified (round 3) |
 
 ### Test Runs
 | Round | Date | Unit | Integration | E2E | Notes |
 |-------|------|------|-------------|-----|-------|
 | 1 | 2026-09-15 | Client 153 passed | Server dev tests 107 passed; QA 61 passed (14 expected-to-fail bug tests) | 64 passed across both projects (4 expected-to-fail bug tests) | See notes below. |
 | 2 | 2026-09-15 | Client 169 passed | Server dev tests 126 passed; QA 81 passed (7 expected-to-fail bug tests) | 82 passed and 2 failed (infrastructure flake) across both projects; 8 expected-to-fail bug test runs | See notes below. |
+| 3 | 2026-09-15 | Client 183 passed | Server dev tests 136 passed; QA 81 passed (no expected-to-fail tests left) | 84 passed across both projects | See notes below. |
 
 Notes for round 1:
 - **Test-infrastructure failures, fixed in QA code:** earlier runs failed because of dev-server load (switched to a production build and 2 workers), two QA test mistakes (clicking an aria-disabled button, asserting transition duration), and an axe scan during the dialog fade-in. No app code was changed.
@@ -587,12 +589,22 @@ Notes for round 2:
 - **Flake:** two mobile-360 discard dialog tests timed out in `page.goto` (`net::ERR_ABORTED`) during the full run. Both passed 3 of 3 times when rerun alone, so this is load on the test servers, not the app.
 - **QA test mistakes fixed before committing:** a line separator at the end of an option is trimmed like other line breaks, so that case now puts it inside the text; the 200% text size test now sets the size before the form renders.
 
+Notes for round 3:
+- **Fix verification:** each fix commit for BUG-07 to BUG-11 removed its expected-to-fail marker, and every regression test passes normally. No markers remain in either QA file.
+- **No new tests in round 3:** the round 2 QA tests already surround every fixed area (invisible text, duplicates, special characters, caret and field heights in both projects), and dev added unit tests for each fix.
+- **Exploratory checks, all as ruled:** heart emoji and flag options are kept and stay distinct; Hebrew with a right-to-left mark is saved; a direction override at the edge of an option is rejected; an option of only a variation selector is empty; details of only invisible characters and a no-break space become none; "Ice cream" and "Icecream" are not duplicates; "Yes" and "YES" with a trailing BOM are duplicates; a zero-width space before 200 characters is trimmed and the question is saved.
+- **Source check:** no raw invisible or control characters in the files changed this round; tests build them with escapes or `String.fromCodePoint`.
+
 ### Other observations (not bugs)
 - **Browser Back after creating** opens an empty Create poll form. The spec does not define this.
 - **Save timeout:** the client gives up on a save after 15 seconds and shows the save error. If the save actually succeeded, the idempotent retry recovers it without a duplicate.
 - **Unreachable API on Windows:** the save error appears after about 2.4 seconds, because Windows retries refused localhost connections.
 
 ### Verdict
+**Round 3: Passed.** BUG-01 to BUG-11 are all verified, there are no open bugs, and the full suite passes: server 217, client 183, and E2E 84 in `chromium-desktop` and `mobile-360`. The captain set the spec to `Done` (2026-09-15).
+
+Remaining known limitations (not bugs): drag-only reordering (WCAG 2.5.7 and 2.1.1, accepted), no authentication yet, and a text size change after the form loads doesn't refit fields unless their width changes.
+
 **Round 2: Failed.** BUG-01 to BUG-06 are verified, but three new Major bugs are open (BUG-08, BUG-09, BUG-11), so the spec is set back to `In Dev`. BUG-07 and BUG-10 are Minor.
 
 Next steps:
