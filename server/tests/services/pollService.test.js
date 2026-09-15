@@ -1,4 +1,5 @@
 const { randomUUID } = require('crypto');
+const { UniqueConstraintError } = require('sequelize');
 const { Poll, PollOption } = require('../../models');
 const { createPoll, getPollForCreator } = require('../../services/pollService');
 const { PollNotFoundError } = require('../../utils/httpErrors');
@@ -40,6 +41,7 @@ describe('pollService', () => {
         details: 'Team lunch, budget is small.',
         answerType: 'multiple',
         status: 'open',
+        inviteCode: expect.stringMatching(/^[0-9A-Za-z]{10}$/),
         createdAt: expect.any(Date),
         options: [
           { id: expect.any(String), text: 'Sushi', position: 0 },
@@ -51,6 +53,44 @@ describe('pollService', () => {
       const stored = await Poll.findByPk(poll.id);
       expect(stored.creatorId).toBe(user.id);
       expect(stored.clientRequestId).toBe(input.clientRequestId);
+    });
+
+    test('retries with a new invite code when the generated one is already taken', async () => {
+      const takenCode = new UniqueConstraintError({
+        parent: Object.assign(new Error('duplicate key'), { constraint: 'polls_invite_code_key' }),
+      });
+      const create = jest.spyOn(Poll, 'create').mockRejectedValueOnce(takenCode);
+
+      try {
+        const { poll, created } = await createPoll(pollInput(user.id));
+
+        expect(created).toBe(true);
+        expect(poll.inviteCode).toMatch(/^[0-9A-Za-z]{10}$/);
+        expect(create).toHaveBeenCalledTimes(2);
+        expect(await Poll.count()).toBe(1);
+      } finally {
+        create.mockRestore();
+      }
+    });
+
+    test('gives up after three invite code conflicts and saves nothing', async () => {
+      const takenCode = () =>
+        new UniqueConstraintError({
+          parent: Object.assign(new Error('duplicate key'), { constraint: 'polls_invite_code_key' }),
+        });
+      const create = jest
+        .spyOn(Poll, 'create')
+        .mockRejectedValueOnce(takenCode())
+        .mockRejectedValueOnce(takenCode())
+        .mockRejectedValueOnce(takenCode());
+
+      try {
+        await expect(createPoll(pollInput(user.id))).rejects.toBeInstanceOf(UniqueConstraintError);
+        expect(create).toHaveBeenCalledTimes(3);
+        expect(await Poll.count()).toBe(0);
+      } finally {
+        create.mockRestore();
+      }
     });
 
     test('never returns the creator id or client request id', async () => {

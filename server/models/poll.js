@@ -1,5 +1,5 @@
 const { DataTypes, Model } = require('sequelize');
-const { POLL_LIMITS, ANSWER_TYPES, POLL_STATUS } = require('../utils/pollRules');
+const { POLL_LIMITS, ANSWER_TYPES, POLL_STATUS, INVITE_CODE_LENGTH } = require('../utils/pollRules');
 
 const ENUM_MAX_LENGTH = 10;
 
@@ -44,6 +44,10 @@ module.exports = (sequelize) => {
       clientRequestId: {
         type: DataTypes.UUID,
         allowNull: false,
+      },
+      // Set by the database default generate_invite_code(); never changes.
+      inviteCode: {
+        type: DataTypes.STRING(INVITE_CODE_LENGTH),
       },
     },
     {

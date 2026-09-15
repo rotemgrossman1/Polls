@@ -14,4 +14,9 @@ const POLL_STATUS = {
   CLOSED: 'closed',
 };
 
-module.exports = { POLL_LIMITS, ANSWER_TYPES, POLL_STATUS };
+// Invite links end in a random, case-sensitive code of this many base62 characters, made by the
+// database (see the add-invite-code-to-polls migration).
+const INVITE_CODE_LENGTH = 10;
+const INVITE_CODE_PATTERN = new RegExp(`^[0-9A-Za-z]{${INVITE_CODE_LENGTH}}$`);
+
+module.exports = { POLL_LIMITS, ANSWER_TYPES, POLL_STATUS, INVITE_CODE_LENGTH, INVITE_CODE_PATTERN };
