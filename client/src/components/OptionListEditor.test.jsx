@@ -239,6 +239,37 @@ describe('OptionListEditor', () => {
       expect(screen.queryByTestId('drop-slot')).not.toBeInTheDocument();
     });
 
+    test('holding a drag near the bottom or top of the viewport scrolls the page, and dropping stops it', async () => {
+      const frames = [];
+      jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+        frames.push(callback);
+        return frames.length;
+      });
+      const cancelFrame = jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+      const scrollBy = jest.spyOn(window, 'scrollBy').mockImplementation(() => {});
+      const runNextFrame = () => act(() => {
+        frames.shift()();
+      });
+      render(<Harness />);
+      await fillOptions(['Pizza', 'Sushi']);
+
+      const handle = startDrag('Drag to reorder option 1', { from: 30, to: window.innerHeight - 10 });
+      runNextFrame();
+      expect(scrollBy).toHaveBeenLastCalledWith(0, 8);
+
+      fireEvent.pointerMove(handle, { clientY: 10, pointerId: 1, pointerType: 'touch' });
+      runNextFrame();
+      expect(scrollBy).toHaveBeenLastCalledWith(0, -8);
+
+      fireEvent.pointerMove(handle, { clientY: 300, pointerId: 1, pointerType: 'touch' });
+      scrollBy.mockClear();
+      runNextFrame();
+      expect(scrollBy).not.toHaveBeenCalled();
+
+      fireEvent.pointerUp(handle, { clientY: 300, pointerId: 1, pointerType: 'touch' });
+      expect(cancelFrame).toHaveBeenCalled();
+    });
+
     test('a locked list cannot be dragged', async () => {
       const { rerender } = render(<Harness />);
       await fillOptions(['Pizza', 'Sushi']);
