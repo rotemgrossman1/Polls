@@ -1,0 +1,27 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "polls-server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--env-file=C:/Users/ROTEMG~1/AppData/Local/Temp/claude/C--Users-rotemgrossman-Documents-fullstack-course-Polls/8219bbf8-af9a-44ec-b5a6-017fa21733d7/scratchpad/server-dev.env",
+        "server/server.js"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "polls-client",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--env-file=C:/Users/ROTEMG~1/AppData/Local/Temp/claude/C--Users-rotemgrossman-Documents-fullstack-course-Polls/8219bbf8-af9a-44ec-b5a6-017fa21733d7/scratchpad/client-dev.env",
+        "client/node_modules/vite/bin/vite.js",
+        "client",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "port": 5173
+    }
+  ]
+}
