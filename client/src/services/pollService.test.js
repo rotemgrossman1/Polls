@@ -11,7 +11,6 @@ describe('pollService', () => {
     const payload = {
       question: 'Lunch?',
       details: null,
-      answerType: 'single',
       options: ['Pizza', 'Sushi'],
       clientRequestId: '0b7f1c3e-2a4d-4f6b-9c8e-1d2f3a4b5c6d',
     };

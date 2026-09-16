@@ -30,7 +30,6 @@ function actAs(user) {
 function pollBody(overrides = {}) {
   return {
     question: `Where should we eat? ${randomUUID()}`,
-    answerType: 'single',
     options: ['Pizza', 'Sushi'],
     clientRequestId: randomUUID(),
     ...overrides,
@@ -189,7 +188,7 @@ describe('QA: Create poll API (adversarial)', () => {
       ['a question of only non-breaking spaces', { question: '  ' }],
       ['a question of only tabs', { question: '\t\t' }],
       ['options differing only by letter case in Greek', { options: ['ΝΑΙ', 'ναι'] }],
-      ['an answer type in a different letter case', { answerType: 'Single' }],
+      ['an answer type, which polls no longer have', { answerType: 'single' }],
       ['a null option', { options: ['Pizza', null] }],
       ['details as a number', { details: 42 }],
       ['details as an object', { details: { text: 'Context' } }],
@@ -242,7 +241,6 @@ describe('QA: Create poll API (adversarial)', () => {
       const body = pollBody({
         question: toUtf16Length('😀', 200),
         details: toUtf16Length('ש', 1000),
-        answerType: 'multiple',
         options: Array.from({ length: 8 }, (_, i) => toUtf16Length(`${i}🎉`, 100)),
       });
 
@@ -361,7 +359,7 @@ describe('QA: Create poll API (adversarial)', () => {
 
       [created, fetched].forEach((res) => {
         expect(Object.keys(res.body).sort()).toEqual(['data', 'error']);
-        expect(Object.keys(res.body.data).sort()).toEqual(['answerType', 'createdAt', 'details', 'id', 'inviteCode', 'options', 'question', 'status']);
+        expect(Object.keys(res.body.data).sort()).toEqual(['createdAt', 'details', 'id', 'inviteCode', 'options', 'question', 'status']);
         res.body.data.options.forEach((o) => expect(Object.keys(o).sort()).toEqual(['id', 'position', 'text']));
         expect(res.text).not.toContain(alice.id);
         expect(res.text).not.toContain(alice.username);

@@ -53,7 +53,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Labeled text field with optional error message and character counter.
-**Used in:** Create poll (question, details, options). Share and join poll (nickname, through `NicknameField`). Later: login.
+**Used in:** Create poll (question, details, options). Share and join poll (nickname, through `NicknameField`).
 
 **Anatomy:** Label, optional help text (between the label and the field), field, helper row (error left, counter right).
 
@@ -137,7 +137,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 | Avatar | all | bg `--color-text`, text `--color-text-inverse`, `--radius-full`, size `--space-9`, `--weight-bold` |
 | Logo link | focus-visible | 3px outline `--color-focus` |
 
-**Behavior:** Until Register and log in ships, shows the fixed test user. Minimal is used on invite-link screens, so every visitor (guest, registered user, or the poll's creator) sees the same page. Under `prefers-reduced-motion` the tilt stays (it is static, not motion).
+**Behavior:** The MVP has no registration or login, so default shows the logo only, like minimal. Minimal is used on invite-link screens, so every visitor (guest, registered user, or the poll's creator) sees the same page. Under `prefers-reduced-motion` the tilt stays (it is static, not motion).
 
 **Accessibility:** `<header>` containing `<nav>`. Logo is a link with accessible name "Polls". Avatar is `aria-hidden`.
 
@@ -151,7 +151,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Welcome block at the top of the landing page.
-**Used in:** Landing page. Later: login.
+**Used in:** Landing page.
 
 **Anatomy:** Tinted card, decorative tilted bars, heading, intro text.
 
@@ -174,40 +174,6 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 **Do / Don't:**
 - Do follow the emphasis-card pattern (tint + ink outline).
 - Don't place a primary button on the tinted card.
-
----
-
-### AnswerTypeSelector
-
-**Status:** Draft
-**Purpose:** Lets the creator pick Single choice or Multiple choice.
-**Used in:** Create poll form.
-
-**Anatomy:** Fieldset legend, two choice cards (indicator circle + label).
-
-**Variants:** Not applicable.
-
-**States:** default, hover, focus-visible, selected, disabled (while saving).
-
-**Tokens:**
-| Part | State | Token |
-|------|-------|-------|
-| Card | default | bg `--color-surface`, 2px border `--color-text`, `--radius-md`, `--shadow-sm`, min height `--space-12`, padding `--space-3` / `--space-4`, `--weight-medium` |
-| Card | hover | lift 1px, `--duration-fast` `--ease-emphasized` |
-| Card | selected | bg `--color-action`, text `--color-action-text`, border `--color-action-hover`, no shadow |
-| Indicator | default | size `--space-8`, 2px border `--color-text`, `--radius-full`, bg `--color-surface` |
-| Indicator | selected | border `--color-surface`, check icon `--color-action` |
-| Card | focus-visible | 3px outline `--color-focus` |
-| Legend | all | `--text-sm`, `--weight-bold` |
-| Cards | all | gap `--space-3` |
-
-**Behavior:** Cards stack full width at every size. The label is the full spec copy and wraps. Single choice is selected when the form opens. No hover lift under `prefers-reduced-motion`.
-
-**Accessibility:** `<fieldset>` + `<legend>`, native radio inputs (visually hidden) — arrow keys change the selection. Selected is shown by fill **and** the check icon, never color alone.
-
-**Do / Don't:**
-- Do follow the answer-tile pattern.
-- Don't shorten or split the label copy.
 
 ---
 
@@ -285,7 +251,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Inline message for a form-level or page-level failure.
-**Used in:** Create poll (save failure, confirmation load error). Share and join poll (join failure, poll load error). Later: login failure.
+**Used in:** Create poll (save failure, confirmation load error). Share and join poll (join failure, poll load error).
 
 **Anatomy:** Container, icon, and either text or title + body. Optional action placed after the alert.
 
@@ -316,7 +282,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Shows a poll's status.
-**Used in:** Confirmation screen, invite page, joined screen. Later: My polls, results.
+**Used in:** Confirmation screen, invite page, joined screen. Later: results.
 
 **Anatomy:** Pill, leading marker (dot for Open, lock icon for Closed), label.
 
@@ -349,7 +315,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Anatomy:** Card, meta row, question, optional details, numbered option list (default only), bubble tail (bubble only).
 
-**Variants:** default (meta row: `StatusBadge` + answer-type tag with icon; numbered option list), invite (meta row: `StatusBadge` + "{n} options" with a list icon; no answer type, no option list). Modifier: bubble.
+**Variants:** default (meta row: `StatusBadge`; numbered option list), invite (meta row: `StatusBadge` + "{n} options" with a list icon; no option list). Modifier: bubble.
 
 **States:** Not applicable (loading uses `Skeleton`; failure uses `Alert`).
 
@@ -366,7 +332,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 | Card | bubble | top margin `--space-2` (room for the tail) |
 | Tail | bubble | size `--space-5`, fill same as the card, 2px `--color-text` outline on its two outer edges, left offset `--space-8`, rises `--space-3` above the card |
 
-**Behavior:** All text wraps in full, no truncation. Line breaks in details are kept. Options appear in saved order. Answer-type icon: dot-in-circle for single, stacked boxes for multiple. The invite variant never shows answer options, answer counts, results, nicknames, the creator, or the poll ID. Bubble: the tail points up at the screen heading directly above the card (`StickerHeading` or the joined heading). The tail is a shape (a square turned 45°), not a tilt, so `--rotate-tilt-*` does not apply.
+**Behavior:** All text wraps in full, no truncation. Line breaks in details are kept. Options appear in saved order. The invite variant never shows answer options, answer counts, results, nicknames, the creator, or the poll ID. Bubble: the tail points up at the screen heading directly above the card (`StickerHeading` or the joined heading). The tail is a shape (a square turned 45°), not a tilt, so `--rotate-tilt-*` does not apply.
 
 **Accessibility:** `<article>` labelled by the question heading (`h2`). Options in an `<ol>`; number badges `aria-hidden`.
 
@@ -497,7 +463,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Share sheet that shows a poll's invite link and lets the creator copy or send it.
-**Used in:** Confirmation screen (Share and join poll). Later: My polls.
+**Used in:** Confirmation screen (Share and join poll).
 
 **Anatomy:** `Sheet`; header (title `h2`, Close icon button); body text; link box (link icon, link text); copy error (under the link box, when shown); actions (Copy, Share link, Done); visually hidden live region.
 
@@ -606,7 +572,7 @@ Previews: `specs/design/previews/direction-playful.html`, `specs/design/previews
 
 **Status:** Draft
 **Purpose:** Whole-content message when there is nothing to show.
-**Used in:** Link doesn't work page. Later: My polls (no polls), results (no answers).
+**Used in:** Link doesn't work page. Later: results (no votes).
 
 **Anatomy:** Icon circle, heading, body, optional action.
 
@@ -669,3 +635,4 @@ How components combine on each screen. Copy comes from the specs.
 ## Changelog
 - 2026-09-14 — Catalog created with the components Create poll needs: Button, TextInput, PageLayout, NavBar, HeroCard, AnswerTypeSelector, OptionListEditor, OptionEditorRow, Alert, StatusBadge, PollSummary, SuccessMark, Skeleton, ConfirmDialog. Character counter is part of `TextInput`. Move up / Move down on `OptionEditorRow` follow captain decision 2A (WCAG 2.5.7); their copy is pending a `/product` spec change. Uses new tokens `--rotate-tilt-sm` and `--rotate-tilt-md`.
 - 2026-09-15 — Share and join poll. Added `Sheet` (pulled out of `ConfirmDialog`, which now builds on it), `ShareInviteModal`, `StickerHeading`, `NicknameField`, `EmptyState`, and a **Screens** section. Changed: `Button` (success state), `TextInput` (help text sits between label and field; described-by order), `NavBar` (minimal variant), `Alert` (title + body), `PollSummary` (invite variant, bubble modifier), `Skeleton` (sticker shape), plus Used in lines for `StatusBadge` and `SuccessMark`. Captain decisions: invite card keeps the speech bubble without a creator avatar; Copy is the share sheet's primary; on the confirmation screen, "Back to home" moves out of the bottom bar so it keeps two actions. No new tokens. Preview: `component-ShareAndJoinPoll.html`.
+- 2026-09-15 — Scope trim (captain). Removed `AnswerTypeSelector`: every poll is single choice. `PollSummary` default variant no longer shows an answer type. Dropped features (login, My polls, Close poll) removed from Used in lines. The `StatusBadge` closed state stays in the catalog but is unused. Previews keep their original mockups as a record.

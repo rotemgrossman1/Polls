@@ -3,8 +3,8 @@ const asyncHandler = require('../utils/asyncHandler');
 const { UnauthorizedError } = require('../utils/httpErrors');
 const logger = require('../utils/logger');
 
-// Stand-in until Register and log in ships: every request acts as the fixed test user
-// named by TEST_USER_USERNAME. Register replaces this body with JWT verification.
+// The MVP has no registration or login: every request acts as the fixed test user
+// named by TEST_USER_USERNAME.
 const requireUser = asyncHandler(async (req, res, next) => {
   const username = process.env.TEST_USER_USERNAME;
   const user = username

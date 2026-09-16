@@ -2,10 +2,10 @@
 
 **Status:** Done
 **Created:** 2026-09-14
-**Last updated:** 2026-09-14
+**Last updated:** 2026-09-15
 
 ## Problem Statement
-A registered user needs a way to create a poll — a question, 2 to 8 answer options, and a choice between single and multiple answers. The poll is the core object of the app: sharing, answering, results, and My polls all depend on it, so it comes first.
+A registered user needs a way to create a poll — a question and 2 to 8 answer options. Every poll is single choice. The poll is the core object of the app: sharing, voting and results all depend on it, so it comes first.
 
 ## Users & Permissions
 | Role  | What they can do in this feature |
@@ -17,7 +17,6 @@ A registered user needs a way to create a poll — a question, 2 to 8 answer opt
 - [Must] As a User, I want a landing page with a "Create poll" action, so that I have a clear place to start.
 - [Must] As a User, I want to write a poll question, so that participants know what I'm asking.
 - [Must] As a User, I want to add between 2 and 8 answer options, so that participants have choices to pick from.
-- [Must] As a User, I want to choose whether participants pick one answer or several, so that the poll fits my question.
 - [Must] As a User, I want to drag options into the order I want, so that participants see them in that order.
 - [Must] As a User, I want to see a confirmation of the poll I created, so that I know it was saved correctly.
 - [Should] As a User, I want to add optional details under my question, so that I can give participants context.
@@ -31,17 +30,17 @@ The landing page is the app's start page. Until Register and log in ships, the a
 **Flow 1 — Create a poll (happy path)**
 1. User opens the app. System shows the landing page.
 2. User selects "Create poll".
-3. System shows the Create poll form: empty Question field, "Add details" button, Answer type with Single choice selected, two empty option fields, "Add option" button, "Create poll" and "Cancel" buttons.
+3. System shows the Create poll form: empty Question field, "Add details" button, two empty option fields, "Add option" button, "Create poll" and "Cancel" buttons.
 4. User types the question.
 5. User fills in Option 1 and Option 2.
 6. User selects "Create poll".
 7. System checks the form. All valid: the button changes to "Creating…" and the form is locked.
 8. System saves the poll with status Open and the logged-in user as creator.
-9. System shows the confirmation screen with the question, details (if any), answer type, options in their saved order, and status Open.
+9. System shows the confirmation screen with the question, details (if any), options in their saved order, and status Open.
 
 **Alternate paths**
 - **A. Add details:** User selects "Add details". System shows the Details field below the question and focuses it. "Remove details" hides the field and discards its text. Hidden details are not saved.
-- **B. Multiple choice:** User selects Multiple choice. Options are unchanged. Switching back and forth changes nothing else.
+- **B. (Removed 2026-09-15)** Multiple choice no longer exists; every poll is single choice.
 - **C. Add option:** User selects "Add option". System adds an empty option at the bottom and focuses it. At 8 options, "Add option" is disabled and a hint shows.
 - **D. Remove option:** With more than 2 options, each option has a remove button. System removes that option and renumbers the placeholders. With exactly 2 options, remove buttons are hidden.
 - **E. Reorder:** User drags an option by its drag handle to a new position. System updates the order immediately. Works with any number of options from 2 to 8.
@@ -56,9 +55,9 @@ The landing page is the app's start page. Until Register and log in ships, the a
 | Screen / Component | Empty | Loading | Error | Success |
 |--------------------|-------|---------|-------|---------|
 | Landing page | Not applicable — always shows heading, intro, and "Create poll". The ongoing-polls list is added by My polls. | Not applicable — no data loaded. | Not applicable | Heading, intro text, and "Create poll" button. |
-| Create poll form | Question empty, details hidden, Single choice selected, two empty options, remove buttons hidden, "Create poll" enabled. | While saving: button reads "Creating…", button and all fields locked. | Inline error under each invalid field, focus on the first. Save failure: form-level error above the button, input kept, form unlocked. | Navigates to the confirmation screen. |
+| Create poll form | Question empty, details hidden, two empty options, remove buttons hidden, "Create poll" enabled. | While saving: button reads "Creating…", button and all fields locked. | Inline error under each invalid field, focus on the first. Save failure: form-level error above the button, input kept, form unlocked. | Navigates to the confirmation screen. |
 | Option list | Two empty options (minimum). | Not applicable | Inline error under an empty or duplicate option. | Each option shows its placeholder, drag handle, character counter, and remove button (only when more than 2 options). |
-| Confirmation screen | Not applicable | On reload: "Loading poll…" until the poll loads. | Poll can't be loaded (doesn't exist, or belongs to someone else): load error with "Back to home". | "Poll created" heading, question, details (if any), answer type, options in order, status Open, "Back to home" and "Create another poll". |
+| Confirmation screen | Not applicable | On reload: "Loading poll…" until the poll loads. | Poll can't be loaded (doesn't exist, or belongs to someone else): load error with "Back to home". | "Poll created" heading, question, details (if any), options in order, status Open, "Back to home" and "Create another poll". |
 | Discard dialog [Could] | Not applicable | Not applicable | Not applicable | Title, body, "Discard" and "Keep editing". |
 
 ## UI Copy
@@ -77,9 +76,6 @@ The landing page is the app's start page. Until Register and log in ships, the a
 | Details placeholder | Empty | Add context for the people answering. |
 | Details counter | Default | {count}/1000 |
 | Remove details button | Details shown | Remove details |
-| Answer type label | Default | Answer type |
-| Single choice option | Default | Single choice — people pick one answer |
-| Multiple choice option | Default | Multiple choice — people can pick more than one answer |
 | Options label | Default | Options |
 | Options helper | Default | Add 2 to 8 options. Drag to reorder. |
 | Option placeholder | Empty | Option {n} |
@@ -100,7 +96,6 @@ The landing page is the app's start page. Until Register and log in ships, the a
 | Discard dialog buttons [Could] | Default | Discard / Keep editing |
 | Confirmation heading | Success | Poll created |
 | Confirmation intro | Success | Your poll is open and ready for answers. |
-| Confirmation answer type | Success | Single choice / Multiple choice |
 | Confirmation status | Success | Open |
 | Confirmation buttons | Success | Back to home / Create another poll |
 | Confirmation loading | Loading | Loading poll… |
@@ -125,7 +120,6 @@ The landing page is the app's start page. Until Register and log in ships, the a
 - Text in any language, including right-to-left text and emoji, is saved and shown as entered.
 - User fills in details then selects "Remove details": text is discarded and not saved.
 - User removes an option that has an error: the error disappears with it.
-- User switches answer type: options and their order stay the same.
 - User refreshes the form: input is lost (no draft saving).
 - User refreshes the confirmation screen: the same poll loads again.
 - Guest tries to create a poll, or session expires mid-action: handled by Register and log in (deferred).
@@ -134,7 +128,7 @@ The landing page is the app's start page. Until Register and log in ships, the a
 ## Acceptance Criteria
 - [ ] The app opens on the landing page.
 - [ ] The landing page shows "Welcome", the intro text, and a "Create poll" button that opens the Create poll form.
-- [ ] The form opens with an empty question, hidden details, Single choice selected, and exactly 2 empty options.
+- [ ] The form opens with an empty question, hidden details, and exactly 2 empty options.
 - [ ] The Question field accepts at most 200 characters and shows a {count}/200 counter.
 - [ ] "Add details" shows a Details field that accepts at most 1000 characters and shows a {count}/1000 counter.
 - [ ] "Remove details" hides the Details field, and its text is not saved.
@@ -150,8 +144,8 @@ The landing page is the app's start page. Until Register and log in ships, the a
 - [ ] While saving, the button reads "Creating…" and the form cannot be edited or submitted again.
 - [ ] Repeated clicks on "Create poll" create exactly one poll.
 - [ ] If saving fails, "Couldn't create your poll. Check your connection and try again." is shown, all input is kept, and the form is editable again.
-- [ ] A saved poll stores the trimmed question, trimmed details (or none), the answer type, the trimmed options in displayed order, the creator, and status Open.
-- [ ] After saving, the confirmation screen shows "Poll created", the question, details (if any), "Single choice" or "Multiple choice", the options in order, and "Open".
+- [ ] A saved poll stores the trimmed question, trimmed details (or none), the trimmed options in displayed order, the creator, and status Open.
+- [ ] After saving, the confirmation screen shows "Poll created", the question, details (if any), the options in order, and "Open".
 - [ ] "Back to home" opens the landing page; "Create another poll" opens an empty form.
 - [ ] Reloading the confirmation screen shows the same poll.
 - [ ] Opening a confirmation screen for a poll that doesn't exist, or that belongs to another user, shows "We couldn't load this poll." with "Back to home".
@@ -164,7 +158,7 @@ The landing page is the app's start page. Until Register and log in ships, the a
 - Registration, login, logout, guest blocking, session expiry (Register and log in)
 - Editing or deleting a poll after creation
 - Closing a poll, answering a poll, viewing results
-- Creator-set minimum or maximum number of picks for multiple choice
+- Multiple choice polls (removed 2026-09-15)
 - Move up/down buttons or keyboard reordering
 - Drafts and autosave
 - Images, expiry dates, anonymity settings, templates
@@ -173,10 +167,10 @@ The landing page is the app's start page. Until Register and log in ships, the a
 - **Guest blocking and session expiry** — no auth yet; captain decides in the Register and log in spec.
 - **Duplicate poll on retry after a lost response** — rare, accepted for MVP; dev may propose a fix in the dev plan, captain decides.
 - **Keyboard and screen-reader reordering** — captain chose drag only; revisit after MVP.
-- **Min/max picks for multiple choice** — not needed for MVP; captain decides after Answer poll ships.
 
 ## Changelog
 - 2026-09-14 — Spec created.
+- 2026-09-15 — Scope trim (captain). Removed Multiple choice: every poll is single choice, so the Answer type picker, its copy and the answer type on the confirmation screen are gone, and `answer_type` is dropped from the database and API. Register and log in, My polls, Close poll and View participant nicknames were dropped from the MVP, so references to them in this spec are void. The Technical Plan and QA Report below keep their original text as a record.
 
 ---
 

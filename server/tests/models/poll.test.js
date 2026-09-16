@@ -12,7 +12,6 @@ function pollAttributes(creatorId, overrides = {}) {
   return {
     creatorId,
     question: 'Where should we eat on Friday?',
-    answerType: 'single',
     clientRequestId: randomUUID(),
     ...overrides,
   };
@@ -44,12 +43,6 @@ describe('Poll and PollOption models', () => {
     expect(poll.details).toBeNull();
     const options = await poll.getOptions({ order: [['position', 'ASC']] });
     expect(options.map((option) => option.text)).toEqual(['Pizza', 'Sushi']);
-  });
-
-  test('the database rejects an unknown answer type', async () => {
-    await expect(
-      Poll.create(pollAttributes(user.id, { answerType: 'ranked' }), { validate: false }),
-    ).rejects.toBeInstanceOf(DatabaseError);
   });
 
   test('the database rejects an unknown status', async () => {
@@ -130,7 +123,7 @@ describe('Poll and PollOption models', () => {
 
     test('a poll inserted with raw SQL gets an invite code too', async () => {
       const [rows] = await sequelize.query(
-        "INSERT INTO polls (creator_id, question, answer_type, client_request_id) VALUES (:creatorId, 'Lunch?', 'single', gen_random_uuid()) RETURNING invite_code",
+        "INSERT INTO polls (creator_id, question, client_request_id) VALUES (:creatorId, 'Lunch?', gen_random_uuid()) RETURNING invite_code",
         { replacements: { creatorId: user.id } },
       );
 

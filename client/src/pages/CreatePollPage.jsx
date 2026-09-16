@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import Alert from '../components/Alert';
-import AnswerTypeSelector from '../components/AnswerTypeSelector';
 import Button from '../components/Button';
 import ConfirmDialog from '../components/ConfirmDialog';
 import OptionListEditor from '../components/OptionListEditor';
@@ -131,8 +130,6 @@ export default function CreatePollPage() {
             </div>
           )}
         </div>
-
-        <AnswerTypeSelector value={form.answerType} onChange={form.setAnswerType} disabled={form.saving} />
 
         <OptionListEditor
           options={form.options}

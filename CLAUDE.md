@@ -9,26 +9,21 @@
 ## Project Overview
 **App name:** Polls
 
-**Purpose:** A simple poll web application. Registered users create polls and share them with guests through an invite link. Anyone with the link can answer the poll question and, after answering, view the results. Each poll has a graphical results analysis. A poll stays open until its creator closes it.
+**Purpose:** A simple poll web application. The creator makes a single-choice poll and shares it through an invite link. Anyone with the link enters a nickname, votes for one option, and after voting sees the results: the vote count and percentage for each option, and the total number of votes.
 
-**Stage:** Planning / pre-development (MVP). The use cases are defined in `specs/initial-spec.md` and the build order in `specs/roadmap.md`. No application code exists yet.
+**Stage:** MVP in development. Create poll and Share and join poll are built; Vote on poll and View poll results remain, and then the MVP is complete. The use cases are defined in `specs/initial-spec.md` and the build order in `specs/roadmap.md`. Features dropped from the MVP are listed in the roadmap; do not build them.
 
 **Source of truth for use cases:** `specs/initial-spec.md`
 
 **Target Users:**
-- **Guest:** reaches a poll through an invite URL. No account and no login: the guest enters a nickname before answering. Has no poll-creation rights.
+- **Guest:** reaches a poll through an invite URL. No account and no login: the guest enters a nickname before voting. Has no poll-creation rights.
   - Accepts an invite to a poll (given a URL)
   - Enters a nickname
-  - Views the poll question and picks an answer (while the poll is open)
-  - Views the poll's results after answering (never before)
-- **User:** registered with a simple username and password. Logging in returns a JWT. No email verification, password reset, OAuth or 2FA. Has all Guest use cases, plus:
-  - Creates a poll
+  - Views the poll question and votes for one option (one vote per nickname per poll)
+  - Views the poll's results after voting (never before)
+- **User:** the one fixed test user named by `TEST_USER_USERNAME`. The MVP has no registration, login or JWT. Has all Guest use cases, plus:
+  - Creates a poll (always single choice)
   - Sends the poll link to guests so they can take part
-  - Sees their own polls in a My polls list
-  - Views the results of their own polls
-  - Views the nicknames of the people who answered their own polls
-  - Closes their own poll (a closed poll accepts no more answers)
-  - Takes part in another user's poll as a guest (enters a nickname)
 
 ---
 
@@ -40,7 +35,7 @@
 | Backend     | Node.js, Express                  |
 | ORM         | Sequelize                         |
 | Database    | PostgreSQL                        |
-| Auth        | JWT                               |
+| Auth        | None in the MVP: fixed test user  |
 | Validation  | Zod                               |
 | Logging     | pino                              |
 | HTTP client | axios                             |
@@ -105,7 +100,7 @@ Never hardcode secrets. All sensitive values live in .env (gitignored). Always d
 
 DATABASE_URL=
 DATABASE_URL_TEST=           # separate test database; must differ from DATABASE_URL
-JWT_SECRET=
+TEST_USER_USERNAME=          # the fixed test user every request acts as (no login in the MVP)
 CLIENT_URL=
 PORT=
 NODE_ENV=

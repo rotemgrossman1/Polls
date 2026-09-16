@@ -14,7 +14,7 @@ const INVALID = 'Invalid request';
 const NOT_FOUND = 'Poll not found';
 const TAKEN = 'Nickname taken';
 const INVITE_KEYS = ['details', 'optionCount', 'question', 'status'];
-const POLL_KEYS = ['answerType', 'createdAt', 'details', 'id', 'inviteCode', 'options', 'question', 'status'];
+const POLL_KEYS = ['createdAt', 'details', 'id', 'inviteCode', 'options', 'question', 'status'];
 // Anything that would reveal internals: stacks, ORM or SQL text, file paths.
 const INTERNALS = /stack|sequelize|postgres|syntax error|violates|constraint|node_modules|[A-Za-z]:\\|\/server\/|\bat \S+ \(/i;
 
@@ -479,7 +479,7 @@ describe('QA: Share and join poll API (adversarial)', () => {
   describe('invite code lifecycle', () => {
     test('a poll inserted without an invite code, as polls were before this feature, gets a working link', async () => {
       const [rows] = await sequelize.query(
-        "INSERT INTO polls (creator_id, question, answer_type, client_request_id) VALUES (:creatorId, 'Older poll?', 'single', gen_random_uuid()) RETURNING id, invite_code",
+        "INSERT INTO polls (creator_id, question, client_request_id) VALUES (:creatorId, 'Older poll?', gen_random_uuid()) RETURNING id, invite_code",
         { replacements: { creatorId: creator.id } },
       );
       const { id, invite_code: code } = rows[0];
@@ -503,7 +503,7 @@ describe('QA: Share and join poll API (adversarial)', () => {
       process.env.TEST_USER_USERNAME = creator.username;
       const created = await request(app)
         .post('/api/polls')
-        .send({ question: 'Stable link?', answerType: 'single', options: ['Yes', 'No'], clientRequestId: randomUUID() });
+        .send({ question: 'Stable link?', options: ['Yes', 'No'], clientRequestId: randomUUID() });
       const { id, inviteCode } = created.body.data;
 
       const loads = await Promise.all([request(app).get(`/api/polls/${id}`), request(app).get(`/api/polls/${id}`)]);

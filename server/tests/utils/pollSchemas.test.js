@@ -4,7 +4,6 @@ const { createPollBody, pollIdParams } = require('../../utils/pollSchemas');
 function validBody(overrides = {}) {
   return {
     question: 'Where should we eat on Friday?',
-    answerType: 'single',
     options: ['Pizza', 'Sushi'],
     clientRequestId: randomUUID(),
     ...overrides,
@@ -101,10 +100,6 @@ describe('createPollBody', () => {
     expect(result.data.question).toBe('מה אוכלים\u200F?');
   });
 
-  test('accepts multiple choice', () => {
-    expect(parse(validBody({ answerType: 'multiple' })).success).toBe(true);
-  });
-
   test('accepts limits exactly: 200-char question, 1000-char details, 8 options of 100 chars', () => {
     const options = Array.from({ length: 8 }, (_, i) => `${i}`.padEnd(100, 'x'));
     const result = parse(
@@ -152,7 +147,7 @@ describe('createPollBody', () => {
     ['details with a null byte', { details: 'Context\u0000here' }],
     ['details with a bell character', { details: 'Context\u0007' }],
     ['details with a lone high surrogate', { details: 'Context \uD800' }],
-    ['unknown answer type', { answerType: 'ranked' }],
+    ['answer type, which polls no longer have', { answerType: 'single' }],
     ['one option', { options: ['Pizza'] }],
     ['nine options', { options: Array.from({ length: 9 }, (_, i) => `Option ${i}`) }],
     ['empty option', { options: ['Pizza', ''] }],

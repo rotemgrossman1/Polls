@@ -49,7 +49,7 @@ async function fillValid() {
 }
 
 describe('CreatePollPage', () => {
-  test('opens with an empty question, hidden details, Single choice, and two empty options', () => {
+  test('opens with an empty question, hidden details, and two empty options', () => {
     renderPage();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Create a poll' })).toBeInTheDocument();
@@ -59,7 +59,7 @@ describe('CreatePollPage', () => {
     expect(screen.getByText('0/200')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add details' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Details (optional)')).not.toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Single choice/ })).toBeChecked();
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
     expect(screen.getAllByRole('textbox', { name: /^Option \d$/ })).toHaveLength(2);
     expect(option(1)).toHaveValue('');
     expect(option(1)).toHaveAttribute('maxLength', '100');
@@ -129,7 +129,6 @@ describe('CreatePollPage', () => {
     createPoll.mockReturnValue(save.promise);
     renderPage();
     await fillValid();
-    await userEvent.click(screen.getByRole('radio', { name: /Multiple choice/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Add option' }));
     await userEvent.type(option(3), 'Tacos');
 
@@ -140,7 +139,6 @@ describe('CreatePollPage', () => {
     expect(question()).toHaveAttribute('readonly');
     expect(option(1)).toHaveAttribute('readonly');
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
-    expect(screen.getByRole('radio', { name: /Single choice/ })).toBeDisabled();
 
     await userEvent.click(createButton());
     expect(createPoll).toHaveBeenCalledTimes(1);
@@ -151,7 +149,6 @@ describe('CreatePollPage', () => {
     expect(createPoll).toHaveBeenCalledWith({
       question: 'Where should we eat?',
       details: null,
-      answerType: 'multiple',
       options: ['Pizza', 'Sushi', 'Tacos'],
       clientRequestId: expect.any(String),
     });
@@ -219,7 +216,7 @@ describe('CreatePollPage', () => {
 
   test('Discard returns to the landing page without saving', async () => {
     renderPage();
-    await userEvent.click(screen.getByRole('radio', { name: /Multiple choice/ }));
+    await userEvent.type(option(1), 'Pizza');
 
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await userEvent.click(screen.getByRole('button', { name: 'Discard' }));

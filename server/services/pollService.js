@@ -3,7 +3,7 @@ const { sequelize, Poll, PollOption } = require('../models');
 const { PollNotFoundError } = require('../utils/httpErrors');
 const { POLL_STATUS } = require('../utils/pollRules');
 
-const POLL_ATTRIBUTES = ['id', 'question', 'details', 'answerType', 'status', 'inviteCode', 'createdAt'];
+const POLL_ATTRIBUTES = ['id', 'question', 'details', 'status', 'inviteCode', 'createdAt'];
 const OPTION_ATTRIBUTES = ['id', 'text', 'position'];
 const CLIENT_REQUEST_CONSTRAINT = 'polls_creator_id_client_request_id_key';
 const INVITE_CODE_CONSTRAINT = 'polls_invite_code_key';
@@ -25,7 +25,6 @@ function toPollDto(poll) {
     id: poll.id,
     question: poll.question,
     details: poll.details,
-    answerType: poll.answerType,
     status: poll.status,
     inviteCode: poll.inviteCode,
     createdAt: poll.createdAt,
@@ -42,12 +41,12 @@ function isConstraintConflict(err, constraint) {
 }
 
 // Inserts the poll and its options in one transaction, retrying if the invite code is already taken.
-async function insertPoll({ creatorId, question, details, answerType, options, clientRequestId }) {
+async function insertPoll({ creatorId, question, details, options, clientRequestId }) {
   for (let attempt = 1; ; attempt += 1) {
     try {
       return await sequelize.transaction(async (transaction) => {
         const poll = await Poll.create(
-          { creatorId, question, details, answerType, status: POLL_STATUS.OPEN, clientRequestId },
+          { creatorId, question, details, status: POLL_STATUS.OPEN, clientRequestId },
           { transaction },
         );
         await PollOption.bulkCreate(

@@ -14,7 +14,6 @@ async function createPoll({ creatorId, options = ['Pizza', 'Sushi'], ...override
     {
       creatorId: ownerId,
       question: 'Where should we eat on Friday?',
-      answerType: 'single',
       clientRequestId: randomUUID(),
       ...overrides,
       options: options.map((text, position) => ({ text, position })),

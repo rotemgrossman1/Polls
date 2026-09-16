@@ -11,7 +11,6 @@ function pollInput(creatorId, overrides = {}) {
     creatorId,
     question: 'Where should we eat on Friday?',
     details: null,
-    answerType: 'multiple',
     options: ['Sushi', 'Pizza', 'Tacos'],
     clientRequestId: randomUUID(),
     ...overrides,
@@ -39,7 +38,6 @@ describe('pollService', () => {
         id: expect.any(String),
         question: 'Where should we eat on Friday?',
         details: 'Team lunch, budget is small.',
-        answerType: 'multiple',
         status: 'open',
         inviteCode: expect.stringMatching(/^[0-9A-Za-z]{10}$/),
         createdAt: expect.any(Date),
@@ -163,7 +161,6 @@ describe('pollService', () => {
       const stored = await Poll.create({
         creatorId: user.id,
         question: 'Best day for the retro?',
-        answerType: 'single',
         clientRequestId: randomUUID(),
       });
       await PollOption.bulkCreate([

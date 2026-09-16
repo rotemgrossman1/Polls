@@ -87,7 +87,6 @@ async function createPollViaApi(request, overrides = {}) {
   const res = await request.post(`${API_URL}/polls`, {
     data: {
       question: unique('Where should we eat?'),
-      answerType: 'single',
       options: ['Pizza', 'Sushi'],
       clientRequestId: randomUUID(),
       ...overrides,

@@ -10,7 +10,6 @@ const POLL = {
   id: 'poll-1',
   question: 'Where should we eat on Friday?',
   details: 'Team lunch.\nBudget is small.',
-  answerType: 'multiple',
   status: 'open',
   inviteCode: 'q7Kx2Wm9aZ',
   createdAt: '2026-09-15T08:00:00.000Z',
@@ -49,7 +48,6 @@ describe('PollCreatedPage', () => {
     expect(screen.getByText('Your poll is open and ready for answers.')).toBeInTheDocument();
     const summary = screen.getByRole('article', { name: 'Where should we eat on Friday?' });
     expect(within(summary).getByText('Open')).toBeInTheDocument();
-    expect(within(summary).getByText('Multiple choice')).toBeInTheDocument();
     expect(within(summary).getByText(/Budget is small/)).toBeInTheDocument();
     expect(within(summary).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
       '1Sushi',

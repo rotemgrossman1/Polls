@@ -6,8 +6,3 @@ export const POLL_LIMITS = {
   MIN_OPTIONS: 2,
   MAX_OPTIONS: 8,
 };
-
-export const ANSWER_TYPE = {
-  SINGLE: 'single',
-  MULTIPLE: 'multiple',
-};

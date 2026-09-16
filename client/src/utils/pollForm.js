@@ -1,4 +1,4 @@
-import { ANSWER_TYPE, POLL_LIMITS } from './pollRules';
+import { POLL_LIMITS } from './pollRules';
 
 // Request body for POST /api/polls. Hidden details are never sent.
 export function buildCreatePollPayload(form, clientRequestId) {
@@ -7,7 +7,6 @@ export function buildCreatePollPayload(form, clientRequestId) {
   return {
     question: form.question.trim(),
     details: details || null,
-    answerType: form.answerType,
     options: form.options.map((option) => option.text.trim()),
     clientRequestId,
   };
@@ -19,7 +18,6 @@ export function hasUserInput(form) {
     form.question.length > 0 ||
     (form.detailsShown && form.details.length > 0) ||
     form.options.some((option) => option.text.length > 0) ||
-    form.answerType !== ANSWER_TYPE.SINGLE ||
     form.options.length !== POLL_LIMITS.MIN_OPTIONS
   );
 }

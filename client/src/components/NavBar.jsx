@@ -5,8 +5,7 @@ import { ROUTES } from '../utils/routes';
 
 /**
  * Top bar with the logo link (catalog: NavBar).
- * - `variant="default"`: logo + current user. Register and log in adds the user; until then it
- *   matches minimal.
+ * - `variant="default"`: logo only, the same as minimal (the MVP has no registration or login).
  * - `variant="minimal"`: logo only, for invite-link screens, so every visitor sees the same page.
  */
 export default function NavBar({ variant = 'default' }) {
