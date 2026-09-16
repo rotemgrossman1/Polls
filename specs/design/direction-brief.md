@@ -17,7 +17,7 @@ Must not feel like: a corporate form, a survey tool, a dashboard, or a children'
 
 ## Audience & Context
 - **Guests** open an invite link on a phone, often from a chat app, answer in under a minute, and see results. One-handed use is the main case.
-- **Users** create and share polls on phone or desktop, and come back to My polls to see results, see nicknames, and close polls.
+- **Users** create and share polls on phone or desktop.
 - Mobile first. Desktop is the same layouts with more room.
 
 ## References
@@ -91,7 +91,7 @@ New components must follow these, so every feature looks like this direction:
 - **Confirmations** for quick actions (copy link) happen inline on the control; `Toast` is kept for background failures.
 - **Badges and tags** are uppercase pills with a 2px border in their own color.
 - **Empty states** use a large tilted icon in a dashed circle.
-- **Errors:** field errors inline (icon + bold text + danger border and tint); login failure is one form-level `Alert` that does not reveal which field was wrong.
+- **Errors:** field errors inline (icon + bold text + danger border and tint).
 
 ## Chart Style
 Follows the Results Chart Rules in `design.md`, styled as:

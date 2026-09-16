@@ -77,9 +77,7 @@ When a spec returns to `In QA` after fixes:
 Think through every item for every route the feature adds or changes. Test the ones that apply.
 
 **Authentication**
-- No token, malformed `Authorization` header, missing `Bearer` prefix
-- Expired JWT, tampered payload, wrong signature, signed with a different secret, `alg: none`
-- Valid token for a user that no longer exists
+- Not applicable in the MVP: there is no login and no JWT; every request acts as the fixed test user. A missing test user returns 401.
 
 **Authorization**
 - Assigned user A reads, edits, deletes, shares, or views results of user B's poll (IDOR)
@@ -102,13 +100,14 @@ Think through every item for every route the feature adds or changes. Test the o
 
 **State**
 - Vote twice on the same poll
-- Vote on a closed, expired, or deleted poll
+- Vote on a poll that does not exist or was deleted
+- Vote twice with the same nickname, including after clearing the device's saved join
 - Vote for an option that belongs to another poll
 - Edit a poll after votes exist (if the spec allows edits)
 
 **Concurrency**
 - Parallel identical requests (`Promise.all`) — e.g. same voter votes 5 times at once: exactly one vote counted
-- Close poll and vote at the same time
+- Two participants vote in the same poll at the same moment: both votes counted, totals and percentages stay correct
 
 **Responses and leaks**
 - Every error uses the `{ data: null, error }` envelope with the correct status code

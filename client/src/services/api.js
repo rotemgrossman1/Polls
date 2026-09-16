@@ -19,7 +19,6 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Register and log in adds a request interceptor here that attaches the JWT.
 
 // Unwraps the { data, error } envelope.
 api.interceptors.response.use(

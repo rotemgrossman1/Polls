@@ -10,7 +10,6 @@ const originalUsername = process.env.TEST_USER_USERNAME;
 function validBody(overrides = {}) {
   return {
     question: 'Where should we eat on Friday?',
-    answerType: 'single',
     options: ['Pizza', 'Sushi'],
     clientRequestId: randomUUID(),
     ...overrides,
@@ -46,7 +45,6 @@ describe('/api/polls', () => {
           validBody({
             question: '  Where should we eat on Friday?  ',
             details: '  Team lunch.\nBudget is small.  ',
-            answerType: 'multiple',
             options: [' Tacos ', 'Pizza', 'Sushi  '],
           }),
         );
@@ -57,7 +55,6 @@ describe('/api/polls', () => {
         id: expect.any(String),
         question: 'Where should we eat on Friday?',
         details: 'Team lunch.\nBudget is small.',
-        answerType: 'multiple',
         status: 'open',
         inviteCode: expect.stringMatching(/^[0-9A-Za-z]{10}$/),
         createdAt: expect.any(String),
@@ -128,7 +125,7 @@ describe('/api/polls', () => {
       ['a spaces-only question', { question: '   ' }],
       ['a question over 200 characters', { question: 'q'.repeat(201) }],
       ['details over 1000 characters', { details: 'd'.repeat(1001) }],
-      ['an unknown answer type', { answerType: 'ranked' }],
+      ['an answer type, which polls no longer have', { answerType: 'single' }],
       ['one option', { options: ['Pizza'] }],
       ['nine options', { options: Array.from({ length: 9 }, (_, i) => `Option ${i}`) }],
       ['a spaces-only option', { options: ['Pizza', '   '] }],

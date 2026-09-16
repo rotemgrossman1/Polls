@@ -172,7 +172,7 @@ Filled in at hand off, for `/qa`.
 - **API calls** only through `client/src/services/`. Never from components directly.
 - **Every UI state** from the spec (empty, loading, error, success) is implemented.
 - One component per file, `PascalCase.jsx`.
-- **Data fetching:** one shared axios instance in `client/src/services/` (base URL from env, attaches JWT, unwraps the `{ data, error }` envelope). Feature service functions call it. Custom hooks in `client/src/hooks/` expose `data`, `loading`, `error` to pages.
+- **Data fetching:** one shared axios instance in `client/src/services/` (base URL from env, unwraps the `{ data, error }` envelope). Feature service functions call it. Custom hooks in `client/src/hooks/` expose `data`, `loading`, `error` to pages.
 - **Errors shown to users** come from the spec's UI Copy table, never raw server messages.
 
 ---

@@ -9,7 +9,6 @@ function poll(overrides = {}) {
     id: 'poll-1',
     question: 'Where should we hold the Q4 team offsite?',
     details: null,
-    answerType: 'single',
     status: 'open',
     createdAt: '2026-09-15T08:00:00.000Z',
     options: [
@@ -22,7 +21,7 @@ function poll(overrides = {}) {
 }
 
 describe('PollSummary', () => {
-  test('is an article labelled by the question, with status, answer type, and options in order', () => {
+  test('is an article labelled by the question, with status and options in order', () => {
     render(<PollSummary poll={poll()} />);
 
     const article = screen.getByRole('article', { name: 'Where should we hold the Q4 team offsite?' });
@@ -30,30 +29,13 @@ describe('PollSummary', () => {
       'Where should we hold the Q4 team offsite?',
     );
     expect(within(article).getByText('Open')).toBeInTheDocument();
-    expect(within(article).getByText('Single choice')).toBeInTheDocument();
+    expect(within(article).queryByText(/choice/)).not.toBeInTheDocument();
     const items = within(article).getAllByRole('listitem');
     expect(items.map((item) => item.textContent)).toEqual([
       '1Tel Aviv — beach hotel',
       '2Jerusalem',
       '3Haifa',
     ]);
-  });
-
-  test('single choice uses a dot-in-circle icon and multiple choice does not', () => {
-    const { container, rerender } = render(<PollSummary poll={poll()} />);
-    const iconPaths = () => container.querySelectorAll('[data-testid="answer-type-icon"] path');
-
-    expect(iconPaths()).toHaveLength(2);
-    expect(iconPaths()[1]).toHaveAttribute('fill', 'currentColor');
-
-    rerender(<PollSummary poll={poll({ answerType: 'multiple' })} />);
-    expect(iconPaths()).toHaveLength(1);
-  });
-
-  test('shows Multiple choice for multiple-answer polls', () => {
-    render(<PollSummary poll={poll({ answerType: 'multiple' })} />);
-
-    expect(screen.getByText('Multiple choice')).toBeInTheDocument();
   });
 
   test('shows details with line breaks kept, and nothing when there are none', () => {
@@ -96,7 +78,7 @@ describe('PollSummary', () => {
 });
 
 describe('PollSummary invite variant', () => {
-  // The invite DTO: no id, creator, options or answer type.
+  // The invite DTO: no id, creator or options.
   function invite(overrides = {}) {
     return {
       question: 'Where should we hold the Q4 team offsite?',
@@ -107,7 +89,7 @@ describe('PollSummary invite variant', () => {
     };
   }
 
-  test('shows status, option count with a list icon, question and details, and no options or answer type', () => {
+  test('shows status, option count with a list icon, question and details, and no options', () => {
     const { container } = render(<PollSummary poll={invite()} variant="invite" />);
 
     const article = screen.getByRole('article', { name: 'Where should we hold the Q4 team offsite?' });
@@ -116,7 +98,6 @@ describe('PollSummary invite variant', () => {
     expect(screen.getByTestId('option-count-icon')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByText(/Budget is small\./).textContent).toBe('Budget is small.\nVote by Thursday.');
     expect(within(article).queryByRole('list')).not.toBeInTheDocument();
-    expect(container.querySelector('[data-testid="answer-type-icon"]')).toBeNull();
     expect(within(article).queryByText(/choice/)).not.toBeInTheDocument();
   });
 

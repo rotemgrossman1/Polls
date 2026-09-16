@@ -7,7 +7,6 @@ function form(overrides = {}) {
     question: '',
     detailsShown: false,
     details: '',
-    answerType: 'single',
     options: [
       { key: 'a', text: '' },
       { key: 'b', text: '' },
@@ -23,7 +22,6 @@ describe('buildCreatePollPayload', () => {
         question: '  Where should we eat?  ',
         detailsShown: true,
         details: '  Team lunch.\nBudget is small.  ',
-        answerType: 'multiple',
         options: [
           { key: 'b', text: ' Sushi ' },
           { key: 'a', text: 'Pizza  ' },
@@ -35,7 +33,6 @@ describe('buildCreatePollPayload', () => {
     expect(payload).toEqual({
       question: 'Where should we eat?',
       details: 'Team lunch.\nBudget is small.',
-      answerType: 'multiple',
       options: ['Sushi', 'Pizza'],
       clientRequestId: REQUEST_ID,
     });
@@ -68,7 +65,6 @@ describe('hasUserInput', () => {
     ['spaces in the question', { question: '  ' }],
     ['details', { detailsShown: true, details: 'Context' }],
     ['option text', { options: [{ key: 'a', text: 'Pizza' }, { key: 'b', text: '' }] }],
-    ['multiple choice', { answerType: 'multiple' }],
     [
       'an added option',
       {

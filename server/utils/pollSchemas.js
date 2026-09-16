@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { POLL_LIMITS, ANSWER_TYPES } = require('./pollRules');
+const { POLL_LIMITS } = require('./pollRules');
 const {
   isBlank,
   trimText,
@@ -22,7 +22,6 @@ const createPollBody = z.strictObject({
     })
     .nullish()
     .transform((value) => (value && !isBlank(value) ? value : null)),
-  answerType: z.enum(ANSWER_TYPES),
   // Options must be unique ignoring case, Unicode composition and invisible characters.
   options: z
     .array(singleLineText(POLL_LIMITS.OPTION_MAX_LENGTH))

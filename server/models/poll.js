@@ -1,5 +1,5 @@
 const { DataTypes, Model } = require('sequelize');
-const { POLL_LIMITS, ANSWER_TYPES, POLL_STATUS, INVITE_CODE_LENGTH } = require('../utils/pollRules');
+const { POLL_LIMITS, POLL_STATUS, INVITE_CODE_LENGTH } = require('../utils/pollRules');
 
 const ENUM_MAX_LENGTH = 10;
 
@@ -30,11 +30,6 @@ module.exports = (sequelize) => {
       details: {
         type: DataTypes.STRING(POLL_LIMITS.DETAILS_MAX_LENGTH),
         allowNull: true,
-      },
-      answerType: {
-        type: DataTypes.STRING(ENUM_MAX_LENGTH),
-        allowNull: false,
-        validate: { isIn: [ANSWER_TYPES] },
       },
       status: {
         type: DataTypes.STRING(ENUM_MAX_LENGTH),

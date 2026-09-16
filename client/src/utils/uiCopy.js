@@ -17,9 +17,6 @@ export const COPY = {
     detailsLabel: 'Details (optional)',
     detailsPlaceholder: 'Add context for the people answering.',
     removeDetails: 'Remove details',
-    answerTypeLabel: 'Answer type',
-    singleChoice: 'Single choice — people pick one answer',
-    multipleChoice: 'Multiple choice — people can pick more than one answer',
     optionsLabel: 'Options',
     optionsHelper: 'Add 2 to 8 options. Drag to reorder.',
     optionPlaceholder: (n) => `Option ${n}`,
@@ -47,10 +44,6 @@ export const COPY = {
   confirmation: {
     heading: 'Poll created',
     intro: 'Your poll is open and ready for answers.',
-    answerType: {
-      single: 'Single choice',
-      multiple: 'Multiple choice',
-    },
     status: {
       open: 'Open',
     },

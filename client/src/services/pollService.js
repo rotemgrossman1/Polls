@@ -1,6 +1,6 @@
 import api from './api';
 
-// payload: { question, details, answerType, options, clientRequestId }
+// payload: { question, details, options, clientRequestId }
 export function createPoll(payload) {
   return api.post('/polls', payload);
 }

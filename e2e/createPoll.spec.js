@@ -17,9 +17,6 @@ const COPY = {
   detailsLabel: 'Details (optional)',
   detailsPlaceholder: 'Add context for the people answering.',
   removeDetails: 'Remove details',
-  answerTypeLabel: 'Answer type',
-  single: 'Single choice — people pick one answer',
-  multiple: 'Multiple choice — people can pick more than one answer',
   optionsLabel: 'Options',
   optionsHelper: 'Add 2 to 8 options. Drag to reorder.',
   addOption: 'Add option',
@@ -37,8 +34,6 @@ const COPY = {
   keepEditing: 'Keep editing',
   confirmHeading: 'Poll created',
   confirmIntro: 'Your poll is open and ready for answers.',
-  confirmSingle: 'Single choice',
-  confirmMultiple: 'Multiple choice',
   confirmStatus: 'Open',
   backHome: 'Back to home',
   createAnother: 'Create another poll',
@@ -108,7 +103,6 @@ async function createPollViaApi(request, overrides = {}) {
   const res = await request.post(`${API_URL}/polls`, {
     data: {
       question: unique('API poll'),
-      answerType: 'single',
       options: ['Yes', 'No'],
       clientRequestId: randomUUID(),
       ...overrides,
@@ -183,15 +177,13 @@ test.describe('create poll form', () => {
     await page.goto('/polls/new');
   });
 
-  test('opens with an empty question, hidden details, Single choice, and exactly two empty options', async ({ page }) => {
+  test('opens with an empty question, hidden details, no answer type, and exactly two empty options', async ({ page }) => {
     await expect(question(page)).toHaveValue('');
     await expect(question(page)).toHaveAttribute('placeholder', COPY.questionPlaceholder);
     await expect(page.getByText('0/200', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: COPY.addDetails, exact: true })).toBeVisible();
     await expect(details(page)).toHaveCount(0);
-    await expect(page.getByRole('group', { name: COPY.answerTypeLabel })).toBeVisible();
-    await expect(page.getByRole('radio', { name: COPY.single })).toBeChecked();
-    await expect(page.getByRole('radio', { name: COPY.multiple })).not.toBeChecked();
+    await expect(page.getByRole('radio')).toHaveCount(0);
     await expect(page.getByRole('group', { name: COPY.optionsLabel })).toBeVisible();
     await expect(page.getByText(COPY.optionsHelper, { exact: true })).toBeVisible();
     await expect(optionFields(page)).toHaveCount(2);
@@ -365,7 +357,6 @@ test.describe('create poll form', () => {
     await expect(creating).toHaveAttribute('aria-disabled', 'true');
     await expect(question(page)).not.toBeEditable();
     await expect(option(page, 1)).not.toBeEditable();
-    await expect(page.getByRole('radio', { name: COPY.multiple })).toBeDisabled();
     await expect(page.getByRole('button', { name: COPY.cancelButton, exact: true })).toBeDisabled();
     await expect(addOptionButton(page)).toBeDisabled();
     // Extra taps and Enter on the locked button; Playwright needs force to tap an aria-disabled button.
@@ -400,14 +391,12 @@ test.describe('create poll form', () => {
       await fillPoll(page, { questionText, options: ['Pizza', 'Sushi', 'Tacos'] });
       await page.getByRole('button', { name: COPY.addDetails, exact: true }).click();
       await details(page).fill('Team lunch');
-      await page.getByText(COPY.multiple, { exact: true }).click();
 
       await createButton(page).click();
 
       await expect(page.getByRole('alert')).toHaveText(COPY.saveError);
       await expect(question(page)).toHaveValue(questionText);
       await expect(details(page)).toHaveValue('Team lunch');
-      await expect(page.getByRole('radio', { name: COPY.multiple })).toBeChecked();
       expect(await optionValues(page)).toEqual(['Pizza', 'Sushi', 'Tacos']);
       await expect(question(page)).toBeEditable();
       await expect(createButton(page)).not.toHaveAttribute('aria-disabled', 'true');
@@ -443,12 +432,11 @@ test.describe('create poll form', () => {
     expect(await countPollsByQuestion(questionText)).toBe(1);
   });
 
-  test('a saved poll stores trimmed text, the answer type, and the displayed order, and the confirmation shows it all with status Open', async ({ page, request }) => {
+  test('a saved poll stores trimmed text and the displayed order, and the confirmation shows it all with status Open', async ({ page, request }) => {
     const questionText = unique('Trimmed');
     await question(page).fill(`   ${questionText}   `);
     await page.getByRole('button', { name: COPY.addDetails, exact: true }).click();
     await details(page).fill('  Line one\nLine two  ');
-    await page.getByText(COPY.multiple, { exact: true }).click();
     await option(page, 1).fill('  Pizza ');
     await option(page, 2).fill('Sushi');
     await addOptionButton(page).click();
@@ -462,7 +450,6 @@ test.describe('create poll form', () => {
     await expect(summary.getByRole('heading', { level: 2 })).toHaveText(questionText);
     await expect(summary).toContainText('Line one');
     await expect(summary).toContainText('Line two');
-    await expect(summary.getByText(COPY.confirmMultiple, { exact: true })).toBeVisible();
     await expect(summary.getByText(COPY.confirmStatus, { exact: true })).toBeVisible();
     const items = summary.getByRole('listitem');
     await expect(items).toHaveCount(3);
@@ -476,7 +463,6 @@ test.describe('create poll form', () => {
     expect(stored).toMatchObject({
       question: questionText,
       details: 'Line one\nLine two',
-      answerType: 'multiple',
       status: 'open',
     });
     expect(stored.options.map((o) => o.text)).toEqual(['Pizza', 'Sushi', 'Tacos']);
@@ -635,11 +621,6 @@ test.describe('create poll form', () => {
 
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: COPY.addDetails, exact: true })).toBeFocused();
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('radio', { name: COPY.single })).toBeFocused();
-    expect(await focusRing()).toEqual({ style: 'solid', color: FOCUS_RING_COLOR });
-    await page.keyboard.press('ArrowDown');
-    await expect(page.getByRole('radio', { name: COPY.multiple })).toBeChecked();
 
     await option(page, 1).focus();
     await page.keyboard.type('Pizza');
@@ -666,7 +647,7 @@ test.describe('create poll form', () => {
     await page.keyboard.press('Enter');
 
     const payload = (await createRequest).postDataJSON();
-    expect(payload).toMatchObject({ question: questionText, answerType: 'multiple', options: ['Pizza', 'Sushi', 'Tacos'] });
+    expect(payload).toMatchObject({ question: questionText, options: ['Pizza', 'Sushi', 'Tacos'] });
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(COPY.confirmHeading);
   });
 });
@@ -898,7 +879,6 @@ test.describe('confirmation screen', () => {
     await expect(page).toHaveURL(/\/polls\/new$/);
     await expect(question(page)).toHaveValue('');
     await expect(optionFields(page)).toHaveCount(2);
-    await expect(page.getByRole('radio', { name: COPY.single })).toBeChecked();
 
     await page.goto(`/polls/${poll.id}/created`);
     await page.getByRole('button', { name: COPY.backHome, exact: true }).click();

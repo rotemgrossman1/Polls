@@ -14,10 +14,6 @@ export const ICON_PATHS = {
     'M10.7 12a1.7 1.7 0 1 1-3.4 0 1.7 1.7 0 0 1 3.4 0ZM16.7 12a1.7 1.7 0 1 1-3.4 0 1.7 1.7 0 0 1 3.4 0Z' +
     'M10.7 18a1.7 1.7 0 1 1-3.4 0 1.7 1.7 0 0 1 3.4 0ZM16.7 18a1.7 1.7 0 1 1-3.4 0 1.7 1.7 0 0 1 3.4 0Z',
   bars: 'M5 20V10M12 20V4M19 20v-6',
-  // Single choice is a stroked ring plus a filled center dot.
-  singleChoice: 'M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z',
-  singleChoiceDot: 'M15.5 12a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z',
-  multipleChoice: 'M8 8h12v12H8zM4 16V4h12',
   // Two chain links joined at an angle.
   link: 'M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7L11.8 5.2M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7',
   // The two chain links pulled apart, with break marks at the gap.

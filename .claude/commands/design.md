@@ -305,7 +305,7 @@ Target: **WCAG 2.2 AA**.
 
 - Self-contained HTML with inline CSS. No build step.
 - Proposed tokens are declared as CSS custom properties at the top of the file, so approved values move straight into `tokens.css`.
-- Use realistic Polls content: a real question, 4+ options with one very long option, results with real numbers, a closed poll, an error state.
+- Use realistic Polls content: a real question, 4+ options with one very long option, results with real numbers, an error state.
 - Show both mobile (360px) and desktop widths.
 - A direction preview shows at least: `PollCard`, the vote screen, `ResultChart`, a primary `Button`, and one error state.
 - Previews are reference only. Dev never copies preview markup into `client/`.

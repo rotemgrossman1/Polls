@@ -1,7 +1,7 @@
 import { useReducer, useRef } from 'react';
 import { createPoll } from '../services/pollService';
 import { buildCreatePollPayload } from '../utils/pollForm';
-import { ANSWER_TYPE, POLL_LIMITS } from '../utils/pollRules';
+import { POLL_LIMITS } from '../utils/pollRules';
 import { moveItem } from '../utils/reorder';
 import { NO_ERRORS, hasErrors, keepShownErrors, validatePollForm } from '../utils/pollValidation';
 
@@ -22,7 +22,6 @@ const initialState = () => ({
   question: '',
   detailsShown: false,
   details: '',
-  answerType: ANSWER_TYPE.SINGLE,
   options: Array.from({ length: POLL_LIMITS.MIN_OPTIONS }, newOption),
   errors: NO_ERRORS,
   saving: false,
@@ -50,8 +49,6 @@ function reducer(state, action) {
       return { ...state, detailsShown: false, details: '' };
     case 'setDetails':
       return { ...state, details: action.value };
-    case 'setAnswerType':
-      return { ...state, answerType: action.value };
     case 'addOption':
       if (state.options.length >= POLL_LIMITS.MAX_OPTIONS) {
         return state;
@@ -130,7 +127,6 @@ export default function useCreatePollForm({ onCreated }) {
     showDetails: () => dispatch({ type: 'showDetails' }),
     hideDetails: () => dispatch({ type: 'hideDetails' }),
     setDetails: (value) => dispatch({ type: 'setDetails', value }),
-    setAnswerType: (value) => dispatch({ type: 'setAnswerType', value }),
     addOption: () => {
       const option = newOption();
       dispatch({ type: 'addOption', option });

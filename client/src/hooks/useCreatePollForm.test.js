@@ -33,14 +33,13 @@ function fillValidForm(form) {
 }
 
 describe('useCreatePollForm', () => {
-  test('starts empty: no details, Single choice, two empty options, no errors', () => {
+  test('starts empty: no details, two empty options, no errors', () => {
     const { form } = setup();
 
     expect(form()).toMatchObject({
       question: '',
       detailsShown: false,
       details: '',
-      answerType: 'single',
       saving: false,
       saveFailed: false,
       canAddOption: true,
@@ -84,7 +83,7 @@ describe('useCreatePollForm', () => {
     expect(form().options.map((option) => option.key)).not.toContain(middle.key);
   });
 
-  test('moves options and switching answer type keeps options and order', () => {
+  test('moves options', () => {
     const { form } = setup();
     act(() => {
       form().setOptionText(form().options[0].key, 'A');
@@ -92,11 +91,8 @@ describe('useCreatePollForm', () => {
     });
 
     act(() => form().moveOption(1, 0));
-    act(() => form().setAnswerType('multiple'));
-    act(() => form().setAnswerType('single'));
 
     expect(form().options.map((option) => option.text)).toEqual(['B', 'A']);
-    expect(form().answerType).toBe('single');
   });
 
   test('removing details hides the field and discards its text', () => {
@@ -191,7 +187,6 @@ describe('useCreatePollForm', () => {
     expect(createPoll).toHaveBeenCalledWith({
       question: 'Where should we eat?',
       details: null,
-      answerType: 'single',
       options: ['Pizza', 'Sushi'],
       clientRequestId: expect.stringMatching(/^[0-9a-f-]{36}$/),
     });

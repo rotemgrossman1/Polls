@@ -25,7 +25,7 @@ async function insertForeignPoll(question) {
   return withClient(async (client) => {
     const { rows: users } = await client.query('SELECT id FROM users WHERE username = $1', [OTHER_USERNAME]);
     const { rows: polls } = await client.query(
-      "INSERT INTO polls (creator_id, question, answer_type, client_request_id) VALUES ($1, $2, 'single', gen_random_uuid()) RETURNING id",
+      "INSERT INTO polls (creator_id, question, client_request_id) VALUES ($1, $2, gen_random_uuid()) RETURNING id",
       [users[0].id, question],
     );
     await client.query("INSERT INTO poll_options (poll_id, text, position) VALUES ($1, 'Yes', 0), ($1, 'No', 1)", [

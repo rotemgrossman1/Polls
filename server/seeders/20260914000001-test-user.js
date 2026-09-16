@@ -2,7 +2,7 @@
 
 require('../utils/loadEnv');
 
-// The fixed test user who acts as the logged-in user until Register and log in ships.
+// The fixed test user who acts as the logged-in user (the MVP has no registration or login).
 function testUsername() {
   const username = process.env.TEST_USER_USERNAME;
   if (!username) {

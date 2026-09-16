@@ -42,14 +42,15 @@ Roles come from `CLAUDE.md` and `specs/initial-spec.md`. If those change, update
 
 | Role  | Can do |
 |-------|--------|
-| User  | Register and log in. Create polls, share the invite link, see My polls, view results and participant nicknames of their own polls, close their own polls. Takes part in other users' polls as a guest. |
-| Guest | Anyone with an invite link, no account. Enters a nickname, answers an open poll, views its results after answering. Cannot create, close, or manage polls. |
+| User  | The one fixed test user (no registration or login in the MVP). Creates single-choice polls and shares the invite link. Takes part in polls through the invite link like a guest. |
+| Guest | Anyone with an invite link, no account. Enters a nickname, votes for one option, views the results after voting. Cannot create or manage polls. |
 
 **Product rules**
-- A poll stays open until its creator closes it. A closed poll accepts no more answers.
-- A guest sees a poll's results only after answering it, never before.
-- The poll creator can see the nicknames of the people who answered.
-- A registered user who opens another user's invite link takes part as a guest.
+- Every poll is single choice: a participant votes for exactly one option.
+- A nickname votes once per poll; the same nickname cannot vote twice in the same poll.
+- A participant sees vote counts and results only after voting, never before.
+- Polls stay open; there is no closing a poll.
+- Features dropped from the MVP are listed in `specs/roadmap.md`. Never spec them.
 
 ---
 
@@ -153,19 +154,14 @@ Exact text shown to the user. Dev implements it word for word; QA tests against 
 
 Think through every item for every feature. Document the ones that apply in **Edge Cases**. If one does not apply, skip it silently.
 
-- [ ] Same person answers the same poll twice (refresh, second tab, different nickname)
-- [ ] Poll is closed by its creator while someone is viewing or answering
+- [ ] Same person votes in the same poll twice (refresh, second tab, same nickname)
 - [ ] Invite link is invalid or points to a poll that does not exist
-- [ ] Guest tries to see results before answering
-- [ ] Guest tries a user-only action (create poll, My polls)
-- [ ] A non-creator tries a creator action on a poll (close, view nicknames)
-- [ ] Registered user opens another user's invite link (takes part as a guest)
-- [ ] Logged-in session expires mid-action
-- [ ] Poll has zero answers (results, My polls)
-- [ ] User has no polls yet (My polls)
+- [ ] Participant tries to see results before voting
+- [ ] The poll's creator opens their own invite link
+- [ ] Poll has zero votes (results)
 - [ ] Poll has many options or very long text
-- [ ] Network or server failure mid-action (answer, create, share, close)
-- [ ] Two people act on the same poll at the same time (e.g. an answer arrives while the creator closes it)
+- [ ] Network or server failure mid-action (vote, create, share)
+- [ ] Two people vote in the same poll at the same time
 
 ---
 

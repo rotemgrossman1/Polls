@@ -1,6 +1,6 @@
 import { COPY } from '../utils/uiCopy';
 
-// Poll status pill (catalog: StatusBadge). Only "Open" exists until Close poll ships.
+// Poll status pill (catalog: StatusBadge). Polls never close in the MVP, so only "Open" is shown.
 const STATUSES = {
   open: {
     label: COPY.confirmation.status.open,
